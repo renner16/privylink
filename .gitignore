@@ -1,45 +1,55 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Dependencies
+node_modules/
+.pnpm-store/
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
+# Build outputs
+.next/
+out/
+dist/
+target/
 
-# testing
-/coverage
+# Environment files
+.env
+.env.local
+.env.*.local
 
-# next.js
-/.next/
-/out/
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
 
-# production
-/build
-
-# misc
+# OS
 .DS_Store
-*.pem
+Thumbs.db
 
-# debug
+# Logs
+*.log
 npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# Anchor/Solana
+test-ledger/
+.anchor/
 
-# vercel
-.vercel
+# Misc
+nul
+*.ps1
+*.sh
+.claude/
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts
-
-# anchor build artifacts
-/anchor/.anchor/
-/anchor/target/
+# Temporary documentation (keep only essential ones)
+COMO_EXECUTAR_WSL2.txt
+CONFIGURAR_PROJETO.md
+CONTINUAR_INSTALACAO.md
+EXECUTAR_NO_UBUNTU.md
+FONTES_SEGURAS.md
+INSTALACAO_SOLANA.md
+MUDAR_SENHA.md
+PRIMEIRA_VEZ_UBUNTU.md
+PROXIMOS_COMANDOS.md
+PROXIMOS_PASSOS.md
+REDEFINIR_SENHA_AGORA.md
+REDEFINIR_SENHA_UBUNTU.md
+RELATORIO_COMPLETO.md
+RESUMO_FINAL.md
+SOLUCAO_TERMINAL_TRAVADO.md
