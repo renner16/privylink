@@ -11,6 +11,7 @@ import {
   getBytesEncoder,
   getU64Encoder,
   type Address,
+  type TransactionSigner,
 } from "@solana/kit";
 import {
   getCreatePrivateDepositInstructionAsync,
@@ -128,8 +129,9 @@ export function VaultCard() {
       });
 
       // Get the instruction
+      // Cast wallet.account as TransactionSigner - the actual signing is handled by useSendTransaction
       const instruction = await getCreatePrivateDepositInstructionAsync({
-        depositor: wallet.account,
+        depositor: wallet.account as unknown as TransactionSigner,
         depositId,
         amount: depositAmount,
         claimHash: claimHash as any,
