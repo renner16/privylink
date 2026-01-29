@@ -172,7 +172,7 @@ export function VaultCard() {
       });
 
       const instruction = await getCreatePrivateDepositInstructionAsync({
-        depositor: wallet as any,
+        depositor: walletAddress as any,
         depositId,
         amount: depositAmount,
         claimHash: claimHash as any,
