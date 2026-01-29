@@ -19,7 +19,7 @@ import {
 } from "../instructions";
 
 export const VAULT_PROGRAM_ADDRESS =
-  "9M7Sh6WUWwgfppwvCtbgAf8kPimY2xMjiNmZwEnyMGL8" as Address<"9M7Sh6WUWwgfppwvCtbgAf8kPimY2xMjiNmZwEnyMGL8">;
+  "98WwJxc1aAeqGWuaouQntJYmdQEnELntf9BqKXD3o34W" as Address<"98WwJxc1aAeqGWuaouQntJYmdQEnELntf9BqKXD3o34W">;
 
 export enum VaultAccount {
   PrivateDeposit,
@@ -82,7 +82,7 @@ export function identifyVaultInstruction(
 }
 
 export type ParsedVaultInstruction<
-  TProgram extends string = "9M7Sh6WUWwgfppwvCtbgAf8kPimY2xMjiNmZwEnyMGL8",
+  TProgram extends string = "98WwJxc1aAeqGWuaouQntJYmdQEnELntf9BqKXD3o34W",
 > =
   | ({
       instructionType: VaultInstruction.ClaimDeposit;

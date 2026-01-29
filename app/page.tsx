@@ -13,101 +13,46 @@ export default function Home() {
       <main className="relative z-10 mx-auto flex min-h-screen max-w-4xl flex-col gap-10 border-x border-border-low px-6 py-16">
         <header className="space-y-3">
           <p className="text-sm uppercase tracking-[0.18em] text-muted">
-            Solana starter kit
+            Solana Privacy Hack 2026
           </p>
           <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-            Ship a Solana dapp fast
+            PrivyLink
           </h1>
           <p className="max-w-3xl text-base leading-relaxed text-muted">
-            Drop in <code className="font-mono">@solana/react-hooks</code>, wrap
-            your tree once, and you get wallet connect/disconnect plus
-            ready-to-use hooks for balances and transactions—no manual RPC
-            wiring.
+            Transferências privadas de SOL com <strong>unlinkability on-chain</strong>.
+            Envie fundos para qualquer pessoa sem criar um link direto entre remetente e destinatário na blockchain.
           </p>
-          <ul className="mt-4 space-y-2 text-sm text-foreground">
-            <li className="flex gap-2">
-              <span
-                className="mt-1.5 h-2 w-2 rounded-full bg-foreground/60"
-                aria-hidden
-              />
-              <div>
-                <a
-                  className="font-medium underline underline-offset-2"
-                  href="https://solana.com/docs"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Solana docs
-                </a>{" "}
-                — core concepts, RPC, programs, and client patterns.
-              </div>
-            </li>
-            <li className="flex gap-2">
-              <span
-                className="mt-1.5 h-2 w-2 rounded-full bg-foreground/60"
-                aria-hidden
-              />
-              <div>
-                <a
-                  className="font-medium underline underline-offset-2"
-                  href="https://www.anchor-lang.com/docs/introduction"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Anchor docs
-                </a>{" "}
-                — build and test programs with IDL, macros, and type-safe
-                clients.
-              </div>
-            </li>
-            <li className="flex gap-2">
-              <span
-                className="mt-1.5 h-2 w-2 rounded-full bg-foreground/60"
-                aria-hidden
-              />
-              <div>
-                <a
-                  className="font-medium underline underline-offset-2"
-                  href="https://faucet.solana.com/"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Solana faucet (devnet)
-                </a>{" "}
-                — grab free devnet SOL to try transfers and transactions.
-              </div>
-            </li>
-            <li className="flex gap-2">
-              <span
-                className="mt-1.5 h-2 w-2 rounded-full bg-foreground/60"
-                aria-hidden
-              />
-              <div>
-                <a
-                  className="font-medium underline underline-offset-2"
-                  href="https://github.com/solana-foundation/framework-kit/tree/main/packages/react-hooks"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  @solana/react-hooks README
-                </a>{" "}
-                — how this starter wires the client, connectors, and hooks.
-              </div>
-            </li>
-          </ul>
+
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            <div className="rounded-xl border border-border-low bg-card p-4">
+              <p className="text-sm font-semibold mb-2">Como funciona?</p>
+              <ol className="text-xs text-muted space-y-1 list-decimal list-inside">
+                <li>Deposite SOL com um código secreto</li>
+                <li>Compartilhe o Magic Link + código com o destinatário</li>
+                <li>Destinatário resgata os fundos com o código</li>
+              </ol>
+            </div>
+            <div className="rounded-xl border border-border-low bg-card p-4">
+              <p className="text-sm font-semibold mb-2">Privacidade</p>
+              <ul className="text-xs text-muted space-y-1">
+                <li>✓ Sem link direto sender → receiver</li>
+                <li>✓ Vault neutro (PDA) intermedia fundos</li>
+                <li>✓ Código auditável e open-source</li>
+              </ul>
+            </div>
+          </div>
         </header>
 
         <section className="w-full max-w-3xl space-y-4 rounded-2xl border border-border-low bg-card p-6 shadow-[0_20px_80px_-50px_rgba(0,0,0,0.35)]">
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-1">
-              <p className="text-lg font-semibold">Wallet connection</p>
+              <p className="text-lg font-semibold">Conectar Wallet</p>
               <p className="text-sm text-muted">
-                Pick any discovered connector and manage connect / disconnect in
-                one spot.
+                Conecte sua wallet Solana para começar.
               </p>
             </div>
             <span className="rounded-full bg-cream px-3 py-1 text-xs font-semibold uppercase tracking-wide text-foreground/80">
-              {status === "connected" ? "Connected" : "Not connected"}
+              {status === "connected" ? "Conectado" : "Desconectado"}
             </span>
           </div>
 
@@ -116,10 +61,10 @@ export default function Home() {
             const solflareConnector = connectors.find(
               (c) => c.name.toLowerCase().includes("solflare") || c.id.toLowerCase().includes("solflare")
             );
-            
+
             if (solflareConnector) {
               const isActive = wallet?.connector.id === solflareConnector.id;
-              
+
               return (
                 <div className="space-y-2">
                   <button
@@ -149,7 +94,7 @@ export default function Home() {
                     )}
                   </button>
                   <p className="text-xs text-muted px-1">
-                    💡 Recomendado: Solflare funciona bem com Devnet
+                    Recomendado: Solflare funciona bem com Devnet
                   </p>
                 </div>
               );
@@ -160,7 +105,7 @@ export default function Home() {
           {/* Outras Wallets */}
           <div className="space-y-2">
             <p className="text-xs font-semibold text-muted uppercase tracking-wide px-1">
-              Outras carteiras disponíveis
+              Outras wallets
             </p>
             <div className="grid gap-3 sm:grid-cols-2">
               {connectors
@@ -180,11 +125,11 @@ export default function Home() {
                       <span className="text-base">{connector.name}</span>
                       <span className="text-xs text-muted">
                         {status === "connecting"
-                          ? "Connecting…"
+                          ? "Conectando…"
                           : status === "connected" &&
                             wallet?.connector.id === connector.id
-                          ? "Active"
-                          : "Tap to connect"}
+                          ? "Ativo"
+                          : "Clique para conectar"}
                       </span>
                     </span>
                     <span
@@ -198,20 +143,30 @@ export default function Home() {
 
           <div className="flex flex-wrap items-center gap-3 border-t border-border-low pt-4 text-sm">
             <span className="rounded-lg border border-border-low bg-cream px-3 py-2 font-mono text-xs">
-              {address ?? "No wallet connected"}
+              {address ?? "Nenhuma wallet conectada"}
             </span>
             <button
               onClick={() => disconnect()}
               disabled={status !== "connected"}
               className="inline-flex items-center gap-2 rounded-lg border border-border-low bg-card px-3 py-2 font-medium transition hover:-translate-y-0.5 hover:shadow-sm cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Disconnect
+              Desconectar
             </button>
           </div>
         </section>
 
         {/* Vault Program Section */}
         <VaultCard />
+
+        {/* Footer */}
+        <footer className="border-t border-border-low pt-6 text-center text-xs text-muted">
+          <p>
+            <strong>PrivyLink</strong> — Construído para o Solana Privacy Hack 2026
+          </p>
+          <p className="mt-1">
+            Privacidade não é um luxo, é um direito fundamental.
+          </p>
+        </footer>
       </main>
     </div>
   );

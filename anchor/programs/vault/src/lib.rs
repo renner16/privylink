@@ -6,7 +6,7 @@ use std::convert::TryInto;
 #[cfg(test)]
 mod tests;
 
-declare_id!("9M7Sh6WUWwgfppwvCtbgAf8kPimY2xMjiNmZwEnyMGL8");
+declare_id!("98WwJxc1aAeqGWuaouQntJYmdQEnELntf9BqKXD3o34W");
 
 #[program]
 pub mod vault {
@@ -97,27 +97,24 @@ pub mod vault {
             PrivyLinkError::InvalidSecret
         );
 
-        // Transfer SOL from deposit account to claimer
-        let bump = deposit.bump;
-        let depositor_key = deposit.depositor;
-        let seeds: &[&[&[u8]]] = &[&[
-            b"deposit",
-            depositor_key.as_ref(),
-            &deposit_id.to_le_bytes(),
-            &[bump],
-        ]];
+        // Get the amount to transfer (store before mutating)
+        let amount_to_transfer = deposit.amount;
 
-        transfer(
-            CpiContext::new_with_signer(
-                ctx.accounts.system_program.to_account_info(),
-                Transfer {
-                    from: ctx.accounts.deposit.to_account_info(),
-                    to: ctx.accounts.claimer.to_account_info(),
-                },
-                seeds,
-            ),
-            deposit.amount,
-        )?;
+        // Transfer SOL by directly manipulating lamports
+        // This works because the program owns the PDA - no need for System Program CPI
+        // System Program transfer doesn't work on accounts with data!
+        let deposit_account_info = ctx.accounts.deposit.to_account_info();
+        let claimer_account_info = ctx.accounts.claimer.to_account_info();
+
+        **deposit_account_info.try_borrow_mut_lamports()? = deposit_account_info
+            .lamports()
+            .checked_sub(amount_to_transfer)
+            .ok_or(PrivyLinkError::InvalidAmount)?;
+
+        **claimer_account_info.try_borrow_mut_lamports()? = claimer_account_info
+            .lamports()
+            .checked_add(amount_to_transfer)
+            .ok_or(PrivyLinkError::InvalidAmount)?;
 
         // Mark deposit as claimed to prevent double-spending
         let deposit = &mut ctx.accounts.deposit;
