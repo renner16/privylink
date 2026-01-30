@@ -16,6 +16,7 @@ import {
   getCreatePrivateDepositInstructionAsync,
   VAULT_PROGRAM_ADDRESS,
 } from "../generated/vault";
+import { QRCodeSVG } from "qrcode.react";
 
 const LAMPORTS_PER_SOL = 1_000_000_000n;
 
@@ -34,6 +35,7 @@ export function VaultCard() {
   // Create deposit states
   const [amount, setAmount] = useState("");
   const [secretCode, setSecretCode] = useState("");
+  const [expirationHours, setExpirationHours] = useState("24"); // Default: 24 hours
 
   // Claim deposit states
   const [claimDepositor, setClaimDepositor] = useState("");
@@ -44,6 +46,7 @@ export function VaultCard() {
   const [txStatus, setTxStatus] = useState<string | null>(null);
   const [magicLink, setMagicLink] = useState<string | null>(null);
   const [lastDepositSecret, setLastDepositSecret] = useState<string | null>(null);
+  const [lastExpirationHours, setLastExpirationHours] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"create" | "claim">("create");
 
   const walletAddress = wallet?.account.address;
@@ -147,12 +150,13 @@ export function VaultCard() {
       setTxStatus("Construindo transação...");
       setMagicLink(null);
       setLastDepositSecret(null);
+      setLastExpirationHours(null);
 
       const depositAmount = BigInt(
         Math.floor(parseFloat(amount) * Number(LAMPORTS_PER_SOL))
       );
 
-      const MIN_RENT = 1_440_000n;
+      const MIN_RENT = 1_600_000n; // Updated for new account size (98 bytes)
       const MIN_AMOUNT = MIN_RENT + 5_000n;
 
       if (depositAmount < MIN_AMOUNT) {
@@ -164,11 +168,13 @@ export function VaultCard() {
 
       const depositId = BigInt(Date.now());
       const claimHash = await hashSecret(secretCode);
+      const expHours = BigInt(expirationHours);
 
       console.log("📦 Criando depósito:", {
         depositId: depositId.toString(),
         amount: depositAmount.toString(),
         depositor: walletAddress,
+        expirationHours: expHours.toString(),
       });
 
       const instruction = await getCreatePrivateDepositInstructionAsync({
@@ -176,6 +182,7 @@ export function VaultCard() {
         depositId,
         amount: depositAmount,
         claimHash: claimHash as any,
+        expirationHours: expHours,
       });
 
       setTxStatus("Aguardando assinatura...");
@@ -188,11 +195,19 @@ export function VaultCard() {
       const link = generateMagicLink(walletAddress, depositId.toString());
       setMagicLink(link);
       setLastDepositSecret(secretCode);
+      setLastExpirationHours(expirationHours);
+
+      // Format expiration display
+      const expDisplay = expirationHours === "0" ? "Sem expiração" :
+        parseInt(expirationHours) >= 24
+          ? `${Math.floor(parseInt(expirationHours) / 24)} dias`
+          : `${expirationHours} horas`;
 
       setTxStatus(
         `✅ Depósito criado com sucesso!\n\n` +
         `📋 ID: ${depositId.toString()}\n` +
         `💰 Valor: ${amount} SOL\n` +
+        `⏰ Expira em: ${expDisplay}\n` +
         `🔗 Signature: ${signature?.slice(0, 20)}...\n\n` +
         `⬇️ Use os botões abaixo para copiar o Magic Link e o código secreto.`
       );
@@ -220,7 +235,7 @@ export function VaultCard() {
 
       setTxStatus(errorMessage);
     }
-  }, [walletAddress, wallet, amount, secretCode, send, programDeployed]);
+  }, [walletAddress, wallet, amount, secretCode, expirationHours, send, programDeployed]);
 
   const handleClaimDeposit = useCallback(async () => {
     if (!walletAddress || !claimDepositId || !claimSecret || !claimDepositor || !wallet) return;
@@ -439,6 +454,23 @@ export function VaultCard() {
               disabled={isSending}
               className="w-full rounded-lg border border-border-low bg-card px-4 py-2.5 text-sm outline-none transition placeholder:text-muted focus:border-foreground/30 disabled:cursor-not-allowed disabled:opacity-60"
             />
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-muted whitespace-nowrap">⏰ Expira em:</label>
+              <select
+                value={expirationHours}
+                onChange={(e) => setExpirationHours(e.target.value)}
+                disabled={isSending}
+                className="flex-1 rounded-lg border border-border-low bg-card px-3 py-2.5 text-sm outline-none transition focus:border-foreground/30 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <option value="1">1 hora</option>
+                <option value="6">6 horas</option>
+                <option value="24">24 horas (padrão)</option>
+                <option value="72">3 dias</option>
+                <option value="168">7 dias</option>
+                <option value="720">30 dias</option>
+                <option value="0">Sem expiração</option>
+              </select>
+            </div>
             <button
               onClick={handleCreatePrivateDeposit}
               disabled={isSending || !amount || !secretCode || parseFloat(amount) <= 0}
@@ -448,33 +480,56 @@ export function VaultCard() {
             </button>
           </div>
 
-          {/* Magic Link & Secret Copy Buttons */}
+          {/* Magic Link & Secret Copy Buttons with QR Code */}
           {magicLink && lastDepositSecret && (
-            <div className="mt-4 space-y-2 p-3 rounded-lg bg-green-50 border border-green-200">
-              <p className="text-xs font-semibold text-green-800">
-                🎉 Depósito criado! Compartilhe com o destinatário:
+            <div className="mt-4 space-y-4 p-4 rounded-xl bg-gray-900 border border-gray-700">
+              <p className="text-sm font-semibold text-green-400 text-center">
+                🎉 Depósito criado com sucesso!
               </p>
-              <div className="flex gap-2">
+
+              {/* QR Code */}
+              <div className="flex flex-col items-center gap-3 p-4 bg-gray-800 rounded-lg">
+                <QRCodeSVG
+                  value={magicLink}
+                  size={180}
+                  level="H"
+                  includeMargin={true}
+                  bgColor="#1f2937"
+                  fgColor="#ffffff"
+                />
+                <p className="text-xs text-gray-400">Escaneie para compartilhar</p>
+              </div>
+
+              {/* Magic Link Display */}
+              <div className="p-2 bg-gray-800 rounded-lg">
+                <p className="text-[10px] text-gray-500 mb-1">Magic Link:</p>
+                <p className="text-xs text-gray-300 font-mono break-all">{magicLink}</p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-2">
                 <button
                   onClick={() => copyToClipboard(magicLink, "Magic Link")}
-                  className="flex-1 rounded-lg bg-green-600 px-3 py-2 text-xs font-medium text-white hover:bg-green-700 transition"
+                  className="flex-1 rounded-lg bg-green-600 px-3 py-2.5 text-xs font-medium text-white hover:bg-green-500 transition"
                 >
-                  📋 Copiar Magic Link
+                  📋 Copiar Link
                 </button>
                 <button
                   onClick={() => copyToClipboard(lastDepositSecret, "Código secreto")}
-                  className="flex-1 rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 transition"
+                  className="flex-1 rounded-lg bg-blue-600 px-3 py-2.5 text-xs font-medium text-white hover:bg-blue-500 transition"
                 >
-                  🔑 Copiar Código Secreto
+                  🔑 Copiar Código
                 </button>
               </div>
+
               <button
                 onClick={() => copyToClipboard(`${magicLink}&secret=${encodeURIComponent(lastDepositSecret)}`, "Link completo")}
-                className="w-full rounded-lg bg-purple-600 px-3 py-2 text-xs font-medium text-white hover:bg-purple-700 transition"
+                className="w-full rounded-lg bg-purple-600 px-3 py-2.5 text-xs font-medium text-white hover:bg-purple-500 transition"
               >
                 🔗 Copiar Link Completo (com código)
               </button>
-              <p className="text-[10px] text-green-700 mt-1">
+
+              <p className="text-[10px] text-gray-500 text-center">
                 ⚠️ O link completo inclui o código secreto. Use apenas em canais seguros.
               </p>
             </div>

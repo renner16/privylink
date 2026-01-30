@@ -82,12 +82,14 @@ export type CreatePrivateDepositInstructionData = {
   depositId: bigint;
   amount: bigint;
   claimHash: ReadonlyUint8Array;
+  expirationHours: bigint;
 };
 
 export type CreatePrivateDepositInstructionDataArgs = {
   depositId: number | bigint;
   amount: number | bigint;
   claimHash: ReadonlyUint8Array;
+  expirationHours: number | bigint;
 };
 
 export function getCreatePrivateDepositInstructionDataEncoder(): FixedSizeEncoder<CreatePrivateDepositInstructionDataArgs> {
@@ -97,6 +99,7 @@ export function getCreatePrivateDepositInstructionDataEncoder(): FixedSizeEncode
       ["depositId", getU64Encoder()],
       ["amount", getU64Encoder()],
       ["claimHash", fixEncoderSize(getBytesEncoder(), 32)],
+      ["expirationHours", getU64Encoder()],
     ]),
     (value) => ({
       ...value,
@@ -111,6 +114,7 @@ export function getCreatePrivateDepositInstructionDataDecoder(): FixedSizeDecode
     ["depositId", getU64Decoder()],
     ["amount", getU64Decoder()],
     ["claimHash", fixDecoderSize(getBytesDecoder(), 32)],
+    ["expirationHours", getU64Decoder()],
   ]);
 }
 
@@ -141,6 +145,7 @@ export type CreatePrivateDepositAsyncInput<
   depositId: CreatePrivateDepositInstructionDataArgs["depositId"];
   amount: CreatePrivateDepositInstructionDataArgs["amount"];
   claimHash: CreatePrivateDepositInstructionDataArgs["claimHash"];
+  expirationHours: CreatePrivateDepositInstructionDataArgs["expirationHours"];
 };
 
 export async function getCreatePrivateDepositInstructionAsync<
@@ -234,6 +239,7 @@ export type CreatePrivateDepositInput<
   depositId: CreatePrivateDepositInstructionDataArgs["depositId"];
   amount: CreatePrivateDepositInstructionDataArgs["amount"];
   claimHash: CreatePrivateDepositInstructionDataArgs["claimHash"];
+  expirationHours: CreatePrivateDepositInstructionDataArgs["expirationHours"];
 };
 
 export function getCreatePrivateDepositInstruction<

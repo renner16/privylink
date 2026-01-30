@@ -13,29 +13,26 @@ pub mod vault {
     use super::*;
 
     /// Creates a private deposit that can only be claimed with the correct secret code.
-    /// 
+    ///
     /// # Arguments
     /// * `ctx` - Context containing depositor, deposit account, and system program
     /// * `deposit_id` - Unique identifier for this deposit (typically timestamp from frontend)
     /// * `amount` - Amount of SOL to deposit (in lamports)
     /// * `claim_hash` - SHA256 hash of the secret code (32 bytes)
-    /// 
+    /// * `expiration_hours` - Number of hours until the deposit expires (0 = no expiration)
+    ///
     /// # Returns
     /// * `u64` - The deposit_id used to identify this deposit
-    /// 
-    /// # Note
-    /// The deposit_id should be generated on the frontend (e.g., using Date.now() or timestamp)
-    /// and passed to this function, as it's needed for PDA derivation before the function executes.
     pub fn create_private_deposit(
         ctx: Context<CreatePrivateDeposit>,
         deposit_id: u64,
         amount: u64,
         claim_hash: [u8; 32],
+        expiration_hours: u64,
     ) -> Result<u64> {
-
         // Validate amount is sufficient to cover rent + deposit
         let rent = Rent::get()?;
-        let rent_required = rent.minimum_balance(82); // 82 bytes for PrivateDeposit account
+        let rent_required = rent.minimum_balance(98); // 98 bytes for PrivateDeposit account (updated)
         require!(
             amount > rent_required,
             PrivyLinkError::InvalidAmount
@@ -53,6 +50,18 @@ pub mod vault {
             amount,
         )?;
 
+        // Get current timestamp
+        let clock = Clock::get()?;
+        let created_at = clock.unix_timestamp;
+
+        // Calculate expiration (0 means no expiration - set to max i64)
+        let expires_at = if expiration_hours == 0 {
+            i64::MAX
+        } else {
+            created_at.checked_add((expiration_hours as i64) * 3600)
+                .ok_or(PrivyLinkError::InvalidAmount)?
+        };
+
         // Initialize deposit account with data
         let deposit = &mut ctx.accounts.deposit;
         deposit.depositor = ctx.accounts.depositor.key();
@@ -60,28 +69,37 @@ pub mod vault {
         deposit.amount = amount;
         deposit.claimed = false;
         deposit.bump = ctx.bumps.deposit;
+        deposit.created_at = created_at;
+        deposit.expires_at = expires_at;
 
         Ok(deposit_id)
     }
 
     /// Claims a private deposit by providing the correct secret code.
-    /// 
+    ///
     /// # Arguments
     /// * `ctx` - Context containing claimer, deposit account, and system program
     /// * `deposit_id` - The ID of the deposit to claim
     /// * `secret` - The secret code (will be hashed and compared to claim_hash)
-    /// 
+    ///
     /// # Returns
     /// * `Result<()>` - Success if secret is correct and deposit not already claimed
     pub fn claim_deposit(
         ctx: Context<ClaimDeposit>,
-        deposit_id: u64,
+        _deposit_id: u64,
         secret: String,
     ) -> Result<()> {
         let deposit = &ctx.accounts.deposit;
 
         // Validate deposit hasn't been claimed yet
         require!(!deposit.claimed, PrivyLinkError::AlreadyClaimed);
+
+        // Validate deposit hasn't expired
+        let clock = Clock::get()?;
+        require!(
+            clock.unix_timestamp < deposit.expires_at,
+            PrivyLinkError::DepositExpired
+        );
 
         // Calculate SHA256 hash of the provided secret
         let secret_bytes = secret.as_bytes();
@@ -122,10 +140,58 @@ pub mod vault {
 
         Ok(())
     }
+
+    /// Refunds an expired deposit back to the original depositor.
+    ///
+    /// # Arguments
+    /// * `ctx` - Context containing depositor, deposit account, and system program
+    /// * `deposit_id` - The ID of the deposit to refund
+    ///
+    /// # Returns
+    /// * `Result<()>` - Success if deposit is expired and not claimed
+    pub fn refund_expired(
+        ctx: Context<RefundExpired>,
+        _deposit_id: u64,
+    ) -> Result<()> {
+        let deposit = &ctx.accounts.deposit;
+
+        // Validate deposit hasn't been claimed
+        require!(!deposit.claimed, PrivyLinkError::AlreadyClaimed);
+
+        // Validate deposit has expired
+        let clock = Clock::get()?;
+        require!(
+            clock.unix_timestamp >= deposit.expires_at,
+            PrivyLinkError::NotExpiredYet
+        );
+
+        // Get the amount to transfer
+        let amount_to_transfer = deposit.amount;
+
+        // Transfer SOL back to depositor
+        let deposit_account_info = ctx.accounts.deposit.to_account_info();
+        let depositor_account_info = ctx.accounts.depositor.to_account_info();
+
+        **deposit_account_info.try_borrow_mut_lamports()? = deposit_account_info
+            .lamports()
+            .checked_sub(amount_to_transfer)
+            .ok_or(PrivyLinkError::InvalidAmount)?;
+
+        **depositor_account_info.try_borrow_mut_lamports()? = depositor_account_info
+            .lamports()
+            .checked_add(amount_to_transfer)
+            .ok_or(PrivyLinkError::InvalidAmount)?;
+
+        // Mark as claimed to prevent double-refund
+        let deposit = &mut ctx.accounts.deposit;
+        deposit.claimed = true;
+
+        Ok(())
+    }
 }
 
 /// Account structure that stores private deposit information.
-/// 
+///
 /// Each deposit has a unique PDA derived from:
 /// - "deposit" seed
 /// - depositor's public key
@@ -142,12 +208,16 @@ pub struct PrivateDeposit {
     pub claimed: bool,          // 1 byte
     /// Bump seed for the PDA
     pub bump: u8,               // 1 byte
+    /// Timestamp when the deposit was created
+    pub created_at: i64,        // 8 bytes
+    /// Timestamp when the deposit expires
+    pub expires_at: i64,        // 8 bytes
 }
-// Total: 8 (discriminator) + 74 = 82 bytes
+// Total: 8 (discriminator) + 90 = 98 bytes
 
 /// Context for creating a private deposit.
 #[derive(Accounts)]
-#[instruction(deposit_id: u64, amount: u64, claim_hash: [u8; 32])]
+#[instruction(deposit_id: u64, amount: u64, claim_hash: [u8; 32], expiration_hours: u64)]
 pub struct CreatePrivateDeposit<'info> {
     /// The user creating the deposit (must sign and pay for account creation)
     #[account(mut)]
@@ -158,7 +228,7 @@ pub struct CreatePrivateDeposit<'info> {
     #[account(
         init,
         payer = depositor,
-        space = 8 + 32 + 32 + 8 + 1 + 1, // 82 bytes total
+        space = 8 + 32 + 32 + 8 + 1 + 1 + 8 + 8, // 98 bytes total
         seeds = [
             b"deposit",
             depositor.key().as_ref(),
@@ -197,6 +267,34 @@ pub struct ClaimDeposit<'info> {
     pub system_program: Program<'info, System>,
 }
 
+/// Context for refunding an expired deposit.
+#[derive(Accounts)]
+#[instruction(deposit_id: u64)]
+pub struct RefundExpired<'info> {
+    /// The original depositor (must sign and match deposit.depositor)
+    #[account(
+        mut,
+        constraint = depositor.key() == deposit.depositor @ PrivyLinkError::Unauthorized
+    )]
+    pub depositor: Signer<'info>,
+
+    /// The deposit account to refund
+    #[account(
+        mut,
+        seeds = [
+            b"deposit",
+            deposit.depositor.as_ref(),
+            &deposit_id.to_le_bytes()
+        ],
+        bump = deposit.bump,
+        constraint = !deposit.claimed @ PrivyLinkError::AlreadyClaimed
+    )]
+    pub deposit: Account<'info, PrivateDeposit>,
+
+    /// System program
+    pub system_program: Program<'info, System>,
+}
+
 /// Custom error codes for PrivyLink operations.
 #[error_code]
 pub enum PrivyLinkError {
@@ -209,4 +307,13 @@ pub enum PrivyLinkError {
     /// The deposit amount is insufficient (must cover rent + deposit)
     #[msg("Invalid amount")]
     InvalidAmount,
+    /// The deposit has expired and can no longer be claimed
+    #[msg("Deposit has expired")]
+    DepositExpired,
+    /// The deposit has not expired yet and cannot be refunded
+    #[msg("Deposit has not expired yet")]
+    NotExpiredYet,
+    /// Unauthorized action
+    #[msg("Unauthorized")]
+    Unauthorized,
 }

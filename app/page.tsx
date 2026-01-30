@@ -1,6 +1,7 @@
 "use client";
 import { useWalletConnection } from "@solana/react-hooks";
 import { VaultCard } from "./components/vault-card";
+import Link from "next/link";
 
 export default function Home() {
   const { connectors, connect, disconnect, wallet, status } =
@@ -157,6 +158,17 @@ export default function Home() {
 
         {/* Vault Program Section */}
         <VaultCard />
+
+        {/* Refund Link */}
+        <div className="text-center">
+          <Link
+            href="/refund"
+            className="inline-flex items-center gap-2 text-sm text-muted hover:text-foreground transition"
+          >
+            <span>🔄</span>
+            <span>Recuperar depósitos expirados</span>
+          </Link>
+        </div>
 
         {/* Footer */}
         <footer className="border-t border-border-low pt-6 text-center text-xs text-muted">
