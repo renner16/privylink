@@ -180,6 +180,19 @@ export default function SendPage() {
         expiresAt,
       });
 
+      // Salvar no localStorage para página de refund
+      if (typeof window !== "undefined") {
+        const stored = JSON.parse(localStorage.getItem("privylink_deposits") || "[]");
+        stored.push({
+          depositId: depositId.toString(),
+          depositor: walletAddress,
+          amount: parseFloat(amount),
+          expiresAt,
+          createdAt: Math.floor(Date.now() / 1000),
+        });
+        localStorage.setItem("privylink_deposits", JSON.stringify(stored));
+      }
+
       setTxStatus(`Deposito criado!\nSignature: ${signature?.slice(0, 20)}...`);
       setAmount("");
       setSecretCode("");
