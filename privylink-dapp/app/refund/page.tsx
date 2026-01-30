@@ -250,12 +250,21 @@ export default function RefundPage() {
                   </div>
                 </div>
 
-                <button
-                  onClick={() => copyMagicLink(d)}
-                  className="btn-secondary w-full text-sm"
-                >
-                  {copiedId === d.depositId ? "✅ Copiado!" : "📋 Copiar Magic Link"}
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => copyMagicLink(d)}
+                    className="btn-secondary flex-1 text-sm"
+                  >
+                    {copiedId === d.depositId ? "✅ Copiado!" : "📋 Copiar Link"}
+                  </button>
+                </div>
+
+                <p className="text-xs text-muted text-center">
+                  {d.expiresAt === 0
+                    ? "Sem expiração - não pode ser reembolsado"
+                    : "Se não for claimado, você poderá recuperar após expirar"
+                  }
+                </p>
               </div>
             ))}
           </div>
