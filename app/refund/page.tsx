@@ -8,7 +8,6 @@ import {
 import {
   getProgramDerivedAddress,
   getAddressEncoder,
-  getAddressDecoder,
   AccountRole,
   type Address,
 } from "@solana/kit";
@@ -126,7 +125,7 @@ export default function RefundPage() {
       setDeposits(expiredDeposits);
     } catch (err: any) {
       console.error("Failed to fetch deposits:", err);
-      setError("Erro ao carregar depósitos: " + err.message);
+      setError("Failed to load deposits: " + err.message);
     } finally {
       setIsLoading(false);
     }
@@ -207,7 +206,7 @@ export default function RefundPage() {
         instructions: [instruction],
       });
 
-      setSuccess(`Refund realizado com sucesso! Signature: ${signature?.slice(0, 20)}...`);
+      setSuccess(`Refund successful! Signature: ${signature?.slice(0, 20)}...`);
 
       // Remove from list
       setDeposits((prev) => prev.filter((d) => d.pda !== deposit.pda));
@@ -215,14 +214,14 @@ export default function RefundPage() {
     } catch (err: any) {
       console.error("Refund failed:", err);
 
-      let errorMessage = err.message || "Erro desconhecido";
+      let errorMessage = err.message || "Unknown error";
 
       if (errorMessage.includes("NotExpiredYet") || errorMessage.includes("#6004")) {
-        errorMessage = "Este depósito ainda não expirou.";
+        errorMessage = "This deposit has not expired yet.";
       } else if (errorMessage.includes("AlreadyClaimed") || errorMessage.includes("#6000")) {
-        errorMessage = "Este depósito já foi claimado ou reembolsado.";
+        errorMessage = "This deposit has already been claimed or refunded.";
       } else if (errorMessage.includes("Unauthorized") || errorMessage.includes("#6005")) {
-        errorMessage = "Você não é o depositante original.";
+        errorMessage = "You are not the original depositor.";
       }
 
       setError(errorMessage);
@@ -234,29 +233,48 @@ export default function RefundPage() {
   // Not connected state
   if (status !== "connected") {
     return (
-      <div className="min-h-screen bg-bg1 text-foreground">
-        <main className="mx-auto max-w-4xl px-6 py-16">
-          <Link href="/" className="text-sm text-muted hover:text-foreground mb-8 inline-block">
-            &larr; Voltar
+      <div className="relative min-h-screen overflow-x-clip bg-bg1 text-foreground">
+        {/* Background Glow */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div
+            className="absolute left-1/2 top-0 h-[500px] w-[800px] -translate-x-1/2 -translate-y-1/2"
+            style={{
+              background:
+                "radial-gradient(ellipse at center, rgba(153, 69, 255, 0.1) 0%, transparent 60%)",
+            }}
+          />
+        </div>
+
+        <main className="relative z-10 container-narrow py-16">
+          <Link href="/" className="btn-ghost mb-8 inline-flex items-center gap-2">
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Back
           </Link>
 
-          <h1 className="text-3xl font-semibold mb-2">Refund de Depósitos Expirados</h1>
-          <p className="text-muted mb-8">
-            Recupere SOL de depósitos que expiraram sem serem resgatados.
-          </p>
-
-          <div className="rounded-2xl border border-border-low bg-card p-8 text-center">
-            <div className="text-5xl mb-4">🔒</div>
-            <p className="text-lg font-semibold mb-2">Wallet não conectada</p>
-            <p className="text-muted text-sm">
-              Conecte sua wallet para ver e fazer refund dos seus depósitos expirados.
+          <div className="mb-8">
+            <h1 className="section-title mb-2 text-4xl">Expired Deposit Refunds</h1>
+            <p className="section-subtitle">
+              Recover SOL from deposits that expired without being claimed.
             </p>
-            <Link
-              href="/"
-              className="mt-4 inline-block rounded-lg bg-foreground px-6 py-2.5 text-sm font-medium text-background hover:opacity-90 transition"
-            >
-              Conectar Wallet
-            </Link>
+          </div>
+
+          <div className="animated-border">
+            <div className="glass-card p-8 text-center">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-border-subtle">
+                <svg className="h-8 w-8 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
+              <h2 className="mb-2 text-lg font-semibold">Wallet Not Connected</h2>
+              <p className="mb-6 text-sm text-muted">
+                Connect your wallet to view and refund your expired deposits.
+              </p>
+              <Link href="/" className="btn-primary">
+                Connect Wallet
+              </Link>
+            </div>
           </div>
         </main>
       </div>
@@ -264,46 +282,78 @@ export default function RefundPage() {
   }
 
   return (
-    <div className="min-h-screen bg-bg1 text-foreground">
-      <main className="mx-auto max-w-4xl px-6 py-16">
-        <Link href="/" className="text-sm text-muted hover:text-foreground mb-8 inline-block">
-          &larr; Voltar
+    <div className="relative min-h-screen overflow-x-clip bg-bg1 text-foreground">
+      {/* Background Glow */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div
+          className="absolute left-1/2 top-0 h-[500px] w-[800px] -translate-x-1/2 -translate-y-1/2"
+          style={{
+            background:
+              "radial-gradient(ellipse at center, rgba(153, 69, 255, 0.1) 0%, transparent 60%)",
+          }}
+        />
+      </div>
+
+      <main className="relative z-10 container-narrow py-16">
+        <Link href="/" className="btn-ghost mb-8 inline-flex items-center gap-2">
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Back
         </Link>
 
-        <h1 className="text-3xl font-semibold mb-2">Refund de Depósitos Expirados</h1>
-        <p className="text-muted mb-8">
-          Recupere SOL de depósitos que expiraram sem serem resgatados.
-        </p>
+        <div className="mb-8">
+          <h1 className="section-title mb-2 text-4xl">Expired Deposit Refunds</h1>
+          <p className="section-subtitle">
+            Recover SOL from deposits that expired without being claimed.
+          </p>
+        </div>
 
         {/* Error Message */}
         {error && (
-          <div className="mb-6 rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-800">
-            {error}
+          <div className="mb-6 rounded-xl border border-red-500/30 bg-red-500/5 p-4 text-sm text-red-400">
+            <div className="flex items-center gap-2">
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {error}
+            </div>
           </div>
         )}
 
         {/* Success Message */}
         {success && (
-          <div className="mb-6 rounded-lg border border-green-300 bg-green-50 p-4 text-sm text-green-800">
-            {success}
+          <div className="mb-6 rounded-xl border border-sol-green/30 bg-sol-green/5 p-4 text-sm text-sol-green">
+            <div className="flex items-center gap-2">
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              {success}
+            </div>
           </div>
         )}
 
         {/* Loading State */}
         {isLoading && (
-          <div className="rounded-2xl border border-border-low bg-card p-8 text-center">
-            <div className="animate-spin text-4xl mb-4">⏳</div>
-            <p className="text-muted">Carregando depósitos...</p>
+          <div className="glass-card p-8 text-center">
+            <div className="mx-auto mb-4 h-8 w-8">
+              <span className="spinner" style={{ width: '2rem', height: '2rem' }} />
+            </div>
+            <p className="text-muted">Loading deposits...</p>
           </div>
         )}
 
         {/* No Deposits State */}
         {!isLoading && deposits.length === 0 && (
-          <div className="rounded-2xl border border-border-low bg-card p-8 text-center">
-            <div className="text-5xl mb-4">🕐</div>
-            <p className="text-lg font-semibold mb-2">Nenhum depósito para refund</p>
-            <p className="text-muted text-sm">
-              Você não tem depósitos expirados que possam ser reembolsados.
+          <div className="glass-card p-8 text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-border-subtle">
+              <svg className="h-8 w-8 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h2 className="mb-2 text-lg font-semibold">No Refundable Deposits</h2>
+            <p className="text-sm text-muted">
+              You don&apos;t have any expired deposits that can be refunded.
             </p>
           </div>
         )}
@@ -314,18 +364,31 @@ export default function RefundPage() {
             {deposits.map((deposit, index) => (
               <div
                 key={deposit.pda}
-                className="rounded-2xl border border-border-low bg-card p-6"
+                className="glass-card p-6"
               >
-                <div className="flex items-start justify-between gap-4">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div className="space-y-2">
-                    <p className="text-sm text-muted">Depósito #{index + 1}</p>
-                    <p className="text-2xl font-bold">
+                    <div className="flex items-center gap-2">
+                      <span className="badge">Deposit #{index + 1}</span>
+                      <span className="badge" style={{ background: 'rgba(239, 68, 68, 0.15)', borderColor: 'rgba(239, 68, 68, 0.3)', color: '#f87171' }}>
+                        Expired
+                      </span>
+                    </div>
+                    <p className="gradient-text text-3xl font-bold">
                       {(Number(deposit.amount) / 1e9).toFixed(4)} SOL
                     </p>
-                    <div className="text-xs text-muted space-y-1">
-                      <p>Criado: {deposit.createdAt.toLocaleString()}</p>
-                      <p className="text-red-600">
-                        Expirou: {deposit.expiresAt.toLocaleString()}
+                    <div className="space-y-1 text-xs text-muted">
+                      <p className="flex items-center gap-2">
+                        <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        Created: {deposit.createdAt.toLocaleString()}
+                      </p>
+                      <p className="flex items-center gap-2 text-red-400">
+                        <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Expired: {deposit.expiresAt.toLocaleString()}
                       </p>
                     </div>
                   </div>
@@ -333,16 +396,19 @@ export default function RefundPage() {
                   <button
                     onClick={() => handleRefund(deposit)}
                     disabled={isSending || refundingId === deposit.pda}
-                    className="rounded-lg bg-foreground px-6 py-3 text-sm font-medium text-background transition hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    className="btn-primary px-6 py-3"
                   >
                     {refundingId === deposit.pda ? (
                       <>
-                        <span className="animate-spin">⏳</span>
-                        Refunding...
+                        <span className="spinner" />
+                        Processing...
                       </>
                     ) : (
                       <>
-                        💰 Refund
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                        </svg>
+                        Refund
                       </>
                     )}
                   </button>
@@ -353,24 +419,29 @@ export default function RefundPage() {
         )}
 
         {/* Info Section */}
-        <div className="mt-12 rounded-xl border border-border-low bg-cream/30 p-6">
-          <h2 className="text-sm font-semibold mb-4">Como funcionam os Refunds</h2>
-          <ul className="text-xs text-muted space-y-2">
-            <li className="flex items-start gap-2">
-              <span>•</span>
-              <span>Apenas depósitos expirados e não claimados podem ser reembolsados</span>
+        <div className="mt-12 glass-card p-6">
+          <h2 className="mb-4 flex items-center gap-2 font-semibold">
+            <svg className="h-5 w-5 text-sol-purple" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            How Refunds Work
+          </h2>
+          <ul className="space-y-3 text-sm text-muted">
+            <li className="flex items-start gap-3">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-sol-purple/20 text-xs text-sol-purple">1</span>
+              <span>Only expired and unclaimed deposits can be refunded</span>
             </li>
-            <li className="flex items-start gap-2">
-              <span>•</span>
-              <span>Somente o depositante original pode solicitar o refund</span>
+            <li className="flex items-start gap-3">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-sol-purple/20 text-xs text-sol-purple">2</span>
+              <span>Only the original depositor can request a refund</span>
             </li>
-            <li className="flex items-start gap-2">
-              <span>•</span>
-              <span>O refund devolve o valor total (menos taxas de rede)</span>
+            <li className="flex items-start gap-3">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-sol-purple/20 text-xs text-sol-purple">3</span>
+              <span>Refunds return the full amount (minus network fees)</span>
             </li>
-            <li className="flex items-start gap-2">
-              <span>•</span>
-              <span>Os refunds são processados imediatamente on-chain</span>
+            <li className="flex items-start gap-3">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-sol-purple/20 text-xs text-sol-purple">4</span>
+              <span>Refunds are processed immediately on-chain</span>
             </li>
           </ul>
         </div>
@@ -380,9 +451,12 @@ export default function RefundPage() {
           <button
             onClick={fetchExpiredDeposits}
             disabled={isLoading}
-            className="text-sm text-muted hover:text-foreground transition disabled:opacity-50"
+            className="btn-ghost inline-flex items-center gap-2"
           >
-            🔄 Atualizar lista
+            <svg className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Refresh List
           </button>
         </div>
       </main>

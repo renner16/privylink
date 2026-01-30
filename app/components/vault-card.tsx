@@ -44,6 +44,7 @@ export function VaultCard() {
 
   // UI states
   const [txStatus, setTxStatus] = useState<string | null>(null);
+  const [txStatusType, setTxStatusType] = useState<"success" | "error" | "info">("info");
   const [magicLink, setMagicLink] = useState<string | null>(null);
   const [lastDepositSecret, setLastDepositSecret] = useState<string | null>(null);
   const [lastExpirationHours, setLastExpirationHours] = useState<string | null>(null);
@@ -97,13 +98,13 @@ export function VaultCard() {
         setProgramDeployed(isDeployed);
 
         if (!isDeployed) {
-          console.warn("⚠️ PROGRAMA NÃO ESTÁ DEPLOYADO NA DEVNET");
-          console.warn("📋 Programa ID:", VAULT_PROGRAM_ADDRESS);
+          console.warn("Program not deployed on devnet");
+          console.warn("Program ID:", VAULT_PROGRAM_ADDRESS);
         } else {
-          console.log("✅ Programa está deployado:", VAULT_PROGRAM_ADDRESS);
+          console.log("Program deployed:", VAULT_PROGRAM_ADDRESS);
         }
       } catch (err) {
-        console.warn("⚠️ Não foi possível verificar o status do deploy:", err);
+        console.warn("Could not verify deployment status:", err);
         setProgramDeployed(null);
       }
     };
@@ -136,10 +137,12 @@ export function VaultCard() {
   const copyToClipboard = async (text: string, label: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      setTxStatus(`✅ ${label} copiado!`);
+      setTxStatus(`${label} copied to clipboard`);
+      setTxStatusType("success");
       setTimeout(() => setTxStatus(null), 2000);
     } catch {
-      setTxStatus(`❌ Erro ao copiar. Copie manualmente:\n${text}`);
+      setTxStatus(`Failed to copy. Manual copy: ${text}`);
+      setTxStatusType("error");
     }
   };
 
@@ -147,7 +150,8 @@ export function VaultCard() {
     if (!walletAddress || !amount || !secretCode || !wallet) return;
 
     try {
-      setTxStatus("Construindo transação...");
+      setTxStatus("Building transaction...");
+      setTxStatusType("info");
       setMagicLink(null);
       setLastDepositSecret(null);
       setLastExpirationHours(null);
@@ -161,8 +165,9 @@ export function VaultCard() {
 
       if (depositAmount < MIN_AMOUNT) {
         setTxStatus(
-          `❌ Valor muito baixo!\nMínimo: ${Number(MIN_AMOUNT) / Number(LAMPORTS_PER_SOL)} SOL\n(para cobrir rent + taxas)`
+          `Amount too low. Minimum: ${Number(MIN_AMOUNT) / Number(LAMPORTS_PER_SOL)} SOL`
         );
+        setTxStatusType("error");
         return;
       }
 
@@ -170,7 +175,7 @@ export function VaultCard() {
       const claimHash = await hashSecret(secretCode);
       const expHours = BigInt(expirationHours);
 
-      console.log("📦 Criando depósito:", {
+      console.log("Creating deposit:", {
         depositId: depositId.toString(),
         amount: depositAmount.toString(),
         depositor: walletAddress,
@@ -185,7 +190,7 @@ export function VaultCard() {
         expirationHours: expHours,
       });
 
-      setTxStatus("Aguardando assinatura...");
+      setTxStatus("Waiting for signature...");
 
       const signature = await send({
         instructions: [instruction],
@@ -198,26 +203,22 @@ export function VaultCard() {
       setLastExpirationHours(expirationHours);
 
       // Format expiration display
-      const expDisplay = expirationHours === "0" ? "Sem expiração" :
+      const expDisplay = expirationHours === "0" ? "No expiration" :
         parseInt(expirationHours) >= 24
-          ? `${Math.floor(parseInt(expirationHours) / 24)} dias`
-          : `${expirationHours} horas`;
+          ? `${Math.floor(parseInt(expirationHours) / 24)} days`
+          : `${expirationHours} hours`;
 
       setTxStatus(
-        `✅ Depósito criado com sucesso!\n\n` +
-        `📋 ID: ${depositId.toString()}\n` +
-        `💰 Valor: ${amount} SOL\n` +
-        `⏰ Expira em: ${expDisplay}\n` +
-        `🔗 Signature: ${signature?.slice(0, 20)}...\n\n` +
-        `⬇️ Use os botões abaixo para copiar o Magic Link e o código secreto.`
+        `Deposit created successfully!\n\nID: ${depositId.toString()}\nAmount: ${amount} SOL\nExpires: ${expDisplay}`
       );
+      setTxStatusType("success");
 
       setAmount("");
       setSecretCode("");
     } catch (err: any) {
-      console.error("❌ Create deposit failed:", err);
+      console.error("Create deposit failed:", err);
 
-      let errorMessage = "Erro desconhecido";
+      let errorMessage = "Unknown error";
 
       if (err?.message) {
         errorMessage = err.message;
@@ -225,15 +226,16 @@ export function VaultCard() {
 
       if (errorMessage.includes("transaction plan") || errorMessage.includes("failed to execute") || errorMessage.includes("simulation failed")) {
         const programStatus = programDeployed === false
-          ? "❌ PROGRAMA NÃO ESTÁ DEPLOYADO NA DEVNET!"
+          ? "Program not deployed on devnet"
           : programDeployed === true
-          ? "✅ Programa está deployado"
-          : "⚠️ Status do deploy desconhecido";
+          ? "Program is deployed"
+          : "Deployment status unknown";
 
-        errorMessage = `❌ Falha ao executar transação\n\n${programStatus}\n\n💡 Possíveis causas:\n1. Programa não deployado\n2. Saldo insuficiente\n3. Wallet não está em Devnet`;
+        errorMessage = `Transaction failed\n\n${programStatus}\n\nPossible causes:\n1. Program not deployed\n2. Insufficient balance\n3. Wrong network`;
       }
 
       setTxStatus(errorMessage);
+      setTxStatusType("error");
     }
   }, [walletAddress, wallet, amount, secretCode, expirationHours, send, programDeployed]);
 
@@ -241,7 +243,8 @@ export function VaultCard() {
     if (!walletAddress || !claimDepositId || !claimSecret || !claimDepositor || !wallet) return;
 
     try {
-      setTxStatus("Construindo transação de claim...");
+      setTxStatus("Building claim transaction...");
+      setTxStatusType("info");
 
       const depositId = BigInt(claimDepositId);
       const depositorAddress = claimDepositor as Address;
@@ -273,7 +276,7 @@ export function VaultCard() {
       // Use calculated PDA - it should now work correctly!
       const depositPda = calculatedPda;
 
-      console.log("🔓 PDA Debug:", {
+      console.log("PDA Debug:", {
         depositId: depositId.toString(),
         calculatedPda,
         knownPda,
@@ -281,7 +284,7 @@ export function VaultCard() {
         usingPda: depositPda,
       });
 
-      console.log("🔓 Claiming deposit:", {
+      console.log("Claiming deposit:", {
         depositId: depositId.toString(),
         depositor: depositorAddress,
         depositPda,
@@ -310,7 +313,7 @@ export function VaultCard() {
       instructionData.set(secretLengthBytes, offset); offset += secretLengthBytes.length;
       instructionData.set(secretBytes, offset);
 
-      console.log("📋 Manual instruction data hex:",
+      console.log("Manual instruction data hex:",
         Array.from(instructionData).map(b => b.toString(16).padStart(2, '0')).join('')
       );
 
@@ -333,277 +336,367 @@ export function VaultCard() {
         data: instructionData,
       };
 
-      console.log("📋 Instruction built manually");
+      console.log("Instruction built manually");
 
-      setTxStatus("Aguardando assinatura...");
+      setTxStatus("Waiting for signature...");
 
       const signature = await send({
         instructions: [instruction],
       });
 
       setTxStatus(
-        `✅ Claim realizado com sucesso!\n\n` +
-        `🎉 Os fundos foram transferidos para sua wallet.\n` +
-        `🔗 Signature: ${signature?.slice(0, 20)}...`
+        `Claim successful!\n\nFunds transferred to your wallet.\nSignature: ${signature?.slice(0, 20)}...`
       );
+      setTxStatusType("success");
 
       setClaimDepositor("");
       setClaimDepositId("");
       setClaimSecret("");
     } catch (err: any) {
-      console.error("❌ Claim deposit failed:", err);
+      console.error("Claim deposit failed:", err);
 
-      let errorMessage = err?.message || "Erro desconhecido";
+      let errorMessage = err?.message || "Unknown error";
 
       // Decode Anchor error codes
       if (errorMessage.includes("#2006")) {
-        errorMessage = "❌ Erro #2006: ConstraintMut\n\nA conta deposit não está marcada como mutável na transação.";
+        errorMessage = "Error #2006: ConstraintMut\n\nThe deposit account is not marked as mutable.";
       } else if (errorMessage.includes("#3012")) {
-        errorMessage = "❌ Erro #3012: ConstraintSeeds\n\nO PDA derivado não corresponde ao esperado.";
+        errorMessage = "Error #3012: ConstraintSeeds\n\nPDA derivation mismatch.";
       } else if (errorMessage.includes("InvalidSecret") || errorMessage.includes("invalid secret") || errorMessage.includes("#6001")) {
-        errorMessage = "❌ Código secreto inválido!\n\nVerifique se o código está correto.";
+        errorMessage = "Invalid secret code!\n\nPlease verify the code is correct.";
       } else if (errorMessage.includes("AlreadyClaimed") || errorMessage.includes("already claimed") || errorMessage.includes("#6000")) {
-        errorMessage = "❌ Este depósito já foi resgatado!";
+        errorMessage = "This deposit has already been claimed!";
       } else if (errorMessage.includes("AccountNotFound") || errorMessage.includes("not found")) {
-        errorMessage = "❌ Depósito não encontrado!\n\nVerifique o ID e o endereço do depositante.";
+        errorMessage = "Deposit not found!\n\nVerify the ID and depositor address.";
       }
 
       setTxStatus(errorMessage);
+      setTxStatusType("error");
     }
   }, [walletAddress, wallet, claimDepositId, claimSecret, claimDepositor, send]);
 
   if (status !== "connected") {
     return (
-      <section className="w-full max-w-3xl space-y-4 rounded-2xl border border-border-low bg-card p-6 shadow-[0_20px_80px_-50px_rgba(0,0,0,0.35)]">
-        <div className="space-y-1">
-          <p className="text-lg font-semibold">PrivyLink</p>
-          <p className="text-sm text-muted">
-            Conecte sua wallet para criar depósitos privados ou resgatar existentes.
-          </p>
+      <div className="animated-border">
+        <div className="glass-card space-y-6 p-6 md:p-8">
+          <div>
+            <h2 className="text-xl font-semibold md:text-2xl">
+              Private Transfer
+            </h2>
+            <p className="mt-1 text-sm text-muted">
+              Connect your wallet to create private deposits or claim existing ones.
+            </p>
+          </div>
+
+          <div className="glass-card space-y-3 p-4">
+            <div className="flex items-center gap-2">
+              <svg className="h-5 w-5 text-sol-purple" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <span className="font-medium">Configure wallet for Devnet</span>
+            </div>
+            <div className="text-xs text-muted space-y-1">
+              <p><span className="text-foreground">Phantom:</span> Settings &rarr; Developer Mode &rarr; Devnet</p>
+              <p><span className="text-foreground">Solflare:</span> Settings &rarr; Network &rarr; Devnet</p>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-border-low bg-bg-elevated/50 p-6 text-center">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-border-subtle">
+              <svg className="h-6 w-6 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+            <p className="text-muted">Wallet not connected</p>
+          </div>
         </div>
-        <div className="rounded-lg bg-yellow-100/50 border border-yellow-300/50 p-4 text-sm">
-          <p className="font-semibold text-yellow-800 mb-2">⚠️ Configure sua wallet para DEVNET</p>
-          <p className="text-yellow-700 text-xs">
-            <strong>Phantom:</strong> Settings → Developer Mode → Devnet<br/>
-            <strong>Solflare:</strong> Settings → Network → Devnet
-          </p>
-        </div>
-        <div className="rounded-lg bg-cream/50 p-4 text-center text-sm text-muted">
-          Wallet não conectada
-        </div>
-      </section>
+      </div>
     );
   }
 
   return (
-    <section className="w-full max-w-3xl space-y-6 rounded-2xl border border-border-low bg-card p-6 shadow-[0_20px_80px_-50px_rgba(0,0,0,0.35)]">
-      <div className="space-y-1">
-        <p className="text-lg font-semibold">PrivyLink</p>
-        <p className="text-sm text-muted">
-          Transferências privadas de SOL usando códigos secretos.
-        </p>
-      </div>
-
-      {/* Tab Navigation */}
-      <div className="flex gap-2 border-b border-border-low pb-2">
-        <button
-          onClick={() => setActiveTab("create")}
-          className={`px-4 py-2 text-sm font-medium rounded-t-lg transition ${
-            activeTab === "create"
-              ? "bg-foreground text-background"
-              : "text-muted hover:text-foreground"
-          }`}
-        >
-          Criar Depósito
-        </button>
-        <button
-          onClick={() => setActiveTab("claim")}
-          className={`px-4 py-2 text-sm font-medium rounded-t-lg transition ${
-            activeTab === "claim"
-              ? "bg-foreground text-background"
-              : "text-muted hover:text-foreground"
-          }`}
-        >
-          Resgatar (Claim)
-        </button>
-      </div>
-
-      {/* Create Private Deposit Tab */}
-      {activeTab === "create" && (
-        <div className="space-y-3 rounded-xl border border-border-low bg-cream/30 p-4">
-          <p className="text-sm font-semibold">Criar Depósito Privado</p>
-          <p className="text-xs text-muted">
-            Deposite SOL e compartilhe o Magic Link + código secreto com o destinatário.
+    <div className="animated-border">
+      <div className="glass-card space-y-6 p-6 md:p-8">
+        <div>
+          <h2 className="text-xl font-semibold md:text-2xl">
+            Private Transfer
+          </h2>
+          <p className="mt-1 text-sm text-muted">
+            Send SOL privately using secret codes.
           </p>
-          <div className="space-y-2">
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              placeholder="Valor em SOL"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              disabled={isSending}
-              className="w-full rounded-lg border border-border-low bg-card px-4 py-2.5 text-sm outline-none transition placeholder:text-muted focus:border-foreground/30 disabled:cursor-not-allowed disabled:opacity-60"
-            />
-            <input
-              type="text"
-              placeholder="Código secreto (guarde bem!)"
-              value={secretCode}
-              onChange={(e) => setSecretCode(e.target.value)}
-              disabled={isSending}
-              className="w-full rounded-lg border border-border-low bg-card px-4 py-2.5 text-sm outline-none transition placeholder:text-muted focus:border-foreground/30 disabled:cursor-not-allowed disabled:opacity-60"
-            />
-            <div className="flex items-center gap-2">
-              <label className="text-xs text-muted whitespace-nowrap">⏰ Expira em:</label>
-              <select
-                value={expirationHours}
-                onChange={(e) => setExpirationHours(e.target.value)}
-                disabled={isSending}
-                className="flex-1 rounded-lg border border-border-low bg-card px-3 py-2.5 text-sm outline-none transition focus:border-foreground/30 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <option value="1">1 hora</option>
-                <option value="6">6 horas</option>
-                <option value="24">24 horas (padrão)</option>
-                <option value="72">3 dias</option>
-                <option value="168">7 dias</option>
-                <option value="720">30 dias</option>
-                <option value="0">Sem expiração</option>
-              </select>
+        </div>
+
+        {/* Tab Navigation */}
+        <div className="flex rounded-xl bg-bg-elevated/50 p-1">
+          <button
+            onClick={() => setActiveTab("create")}
+            className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-medium transition ${
+              activeTab === "create"
+                ? "bg-gradient-to-r from-sol-purple to-sol-green text-white shadow-lg"
+                : "text-muted hover:text-foreground"
+            }`}
+          >
+            Create Deposit
+          </button>
+          <button
+            onClick={() => setActiveTab("claim")}
+            className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-medium transition ${
+              activeTab === "claim"
+                ? "bg-gradient-to-r from-sol-purple to-sol-green text-white shadow-lg"
+                : "text-muted hover:text-foreground"
+            }`}
+          >
+            Claim Deposit
+          </button>
+        </div>
+
+        {/* Create Private Deposit Tab */}
+        {activeTab === "create" && (
+          <div className="space-y-4">
+            <div className="space-y-3">
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-muted">
+                  Amount (SOL)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  disabled={isSending}
+                  className="input"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-muted">
+                  Secret Code
+                </label>
+                <input
+                  type="text"
+                  placeholder="Create a memorable secret"
+                  value={secretCode}
+                  onChange={(e) => setSecretCode(e.target.value)}
+                  disabled={isSending}
+                  className="input"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-muted">
+                  Expiration
+                </label>
+                <select
+                  value={expirationHours}
+                  onChange={(e) => setExpirationHours(e.target.value)}
+                  disabled={isSending}
+                  className="select"
+                >
+                  <option value="1">1 hour</option>
+                  <option value="6">6 hours</option>
+                  <option value="24">24 hours (default)</option>
+                  <option value="72">3 days</option>
+                  <option value="168">7 days</option>
+                  <option value="720">30 days</option>
+                  <option value="0">No expiration</option>
+                </select>
+              </div>
             </div>
+
             <button
               onClick={handleCreatePrivateDeposit}
               disabled={isSending || !amount || !secretCode || parseFloat(amount) <= 0}
-              className="w-full rounded-lg bg-foreground px-4 py-2.5 text-sm font-medium text-background transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+              className="btn-primary w-full py-3"
             >
-              {isSending ? "Criando..." : "Criar Depósito"}
+              {isSending ? (
+                <>
+                  <span className="spinner" />
+                  Creating...
+                </>
+              ) : (
+                "Create Deposit"
+              )}
             </button>
+
+            {/* Magic Link & Secret Copy Buttons with QR Code */}
+            {magicLink && lastDepositSecret && (
+              <div className="space-y-4 rounded-xl border border-sol-green/30 bg-sol-green/5 p-5">
+                <div className="flex items-center justify-center gap-2 text-sol-green">
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span className="font-semibold">Deposit Created!</span>
+                </div>
+
+                {/* QR Code */}
+                <div className="flex justify-center">
+                  <div className="qr-container">
+                    <QRCodeSVG
+                      value={magicLink}
+                      size={160}
+                      level="H"
+                      includeMargin={false}
+                      bgColor="#ffffff"
+                      fgColor="#000000"
+                    />
+                  </div>
+                </div>
+
+                <p className="text-center text-xs text-muted">
+                  Scan to share the Magic Link
+                </p>
+
+                {/* Magic Link Display */}
+                <div className="rounded-lg bg-bg-elevated p-3">
+                  <p className="mb-1 text-[10px] uppercase tracking-wider text-subtle">Magic Link</p>
+                  <p className="break-all font-mono text-xs text-muted">{magicLink}</p>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <button
+                    onClick={() => copyToClipboard(magicLink, "Magic Link")}
+                    className="btn-secondary text-sm"
+                  >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                    </svg>
+                    Copy Link
+                  </button>
+                  <button
+                    onClick={() => copyToClipboard(lastDepositSecret, "Secret code")}
+                    className="btn-secondary text-sm"
+                  >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                    </svg>
+                    Copy Secret
+                  </button>
+                </div>
+
+                <button
+                  onClick={() => copyToClipboard(`${magicLink}&secret=${encodeURIComponent(lastDepositSecret)}`, "Complete link")}
+                  className="btn-primary w-full text-sm"
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                  </svg>
+                  Copy Complete Link (with secret)
+                </button>
+
+                <p className="text-center text-[10px] text-subtle">
+                  Warning: Complete link includes the secret. Only share on secure channels.
+                </p>
+              </div>
+            )}
           </div>
+        )}
 
-          {/* Magic Link & Secret Copy Buttons with QR Code */}
-          {magicLink && lastDepositSecret && (
-            <div className="mt-4 space-y-4 p-4 rounded-xl bg-gray-900 border border-gray-700">
-              <p className="text-sm font-semibold text-green-400 text-center">
-                🎉 Depósito criado com sucesso!
-              </p>
-
-              {/* QR Code */}
-              <div className="flex flex-col items-center gap-3 p-4 bg-gray-800 rounded-lg">
-                <QRCodeSVG
-                  value={magicLink}
-                  size={180}
-                  level="H"
-                  includeMargin={true}
-                  bgColor="#1f2937"
-                  fgColor="#ffffff"
+        {/* Claim Deposit Tab */}
+        {activeTab === "claim" && (
+          <div className="space-y-4">
+            <div className="space-y-3">
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-muted">
+                  Depositor Address
+                </label>
+                <input
+                  type="text"
+                  placeholder="Depositor wallet address"
+                  value={claimDepositor}
+                  onChange={(e) => setClaimDepositor(e.target.value)}
+                  disabled={isSending}
+                  className="input font-mono text-xs"
                 />
-                <p className="text-xs text-gray-400">Escaneie para compartilhar</p>
               </div>
 
-              {/* Magic Link Display */}
-              <div className="p-2 bg-gray-800 rounded-lg">
-                <p className="text-[10px] text-gray-500 mb-1">Magic Link:</p>
-                <p className="text-xs text-gray-300 font-mono break-all">{magicLink}</p>
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-muted">
+                  Deposit ID
+                </label>
+                <input
+                  type="text"
+                  placeholder="Deposit identifier"
+                  value={claimDepositId}
+                  onChange={(e) => setClaimDepositId(e.target.value)}
+                  disabled={isSending}
+                  className="input"
+                />
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-2">
-                <button
-                  onClick={() => copyToClipboard(magicLink, "Magic Link")}
-                  className="flex-1 rounded-lg bg-green-600 px-3 py-2.5 text-xs font-medium text-white hover:bg-green-500 transition"
-                >
-                  📋 Copiar Link
-                </button>
-                <button
-                  onClick={() => copyToClipboard(lastDepositSecret, "Código secreto")}
-                  className="flex-1 rounded-lg bg-blue-600 px-3 py-2.5 text-xs font-medium text-white hover:bg-blue-500 transition"
-                >
-                  🔑 Copiar Código
-                </button>
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-muted">
+                  Secret Code
+                </label>
+                <input
+                  type="text"
+                  placeholder="Enter the secret code"
+                  value={claimSecret}
+                  onChange={(e) => setClaimSecret(e.target.value)}
+                  disabled={isSending}
+                  className="input"
+                />
               </div>
-
-              <button
-                onClick={() => copyToClipboard(`${magicLink}&secret=${encodeURIComponent(lastDepositSecret)}`, "Link completo")}
-                className="w-full rounded-lg bg-purple-600 px-3 py-2.5 text-xs font-medium text-white hover:bg-purple-500 transition"
-              >
-                🔗 Copiar Link Completo (com código)
-              </button>
-
-              <p className="text-[10px] text-gray-500 text-center">
-                ⚠️ O link completo inclui o código secreto. Use apenas em canais seguros.
-              </p>
             </div>
-          )}
-        </div>
-      )}
 
-      {/* Claim Deposit Tab */}
-      {activeTab === "claim" && (
-        <div className="space-y-3 rounded-xl border border-border-low bg-cream/30 p-4">
-          <p className="text-sm font-semibold">Resgatar Depósito</p>
-          <p className="text-xs text-muted">
-            Cole o Magic Link ou preencha os campos manualmente.
-          </p>
-          <div className="space-y-2">
-            <input
-              type="text"
-              placeholder="Endereço do depositante"
-              value={claimDepositor}
-              onChange={(e) => setClaimDepositor(e.target.value)}
-              disabled={isSending}
-              className="w-full rounded-lg border border-border-low bg-card px-4 py-2.5 text-sm outline-none transition placeholder:text-muted focus:border-foreground/30 disabled:cursor-not-allowed disabled:opacity-60 font-mono text-xs"
-            />
-            <input
-              type="text"
-              placeholder="ID do depósito"
-              value={claimDepositId}
-              onChange={(e) => setClaimDepositId(e.target.value)}
-              disabled={isSending}
-              className="w-full rounded-lg border border-border-low bg-card px-4 py-2.5 text-sm outline-none transition placeholder:text-muted focus:border-foreground/30 disabled:cursor-not-allowed disabled:opacity-60"
-            />
-            <input
-              type="text"
-              placeholder="Código secreto"
-              value={claimSecret}
-              onChange={(e) => setClaimSecret(e.target.value)}
-              disabled={isSending}
-              className="w-full rounded-lg border border-border-low bg-card px-4 py-2.5 text-sm outline-none transition placeholder:text-muted focus:border-foreground/30 disabled:cursor-not-allowed disabled:opacity-60"
-            />
             <button
               onClick={handleClaimDeposit}
               disabled={isSending || !claimDepositId || !claimSecret || !claimDepositor}
-              className="w-full rounded-lg bg-foreground px-4 py-2.5 text-sm font-medium text-background transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+              className="btn-primary w-full py-3"
             >
-              {isSending ? "Resgatando..." : "Resgatar Fundos"}
+              {isSending ? (
+                <>
+                  <span className="spinner" />
+                  Claiming...
+                </>
+              ) : (
+                "Claim Funds"
+              )}
             </button>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Status */}
-      {txStatus && (
-        <div className="rounded-lg border border-border-low bg-cream/50 px-4 py-3 text-sm whitespace-pre-line">
-          {txStatus}
-        </div>
-      )}
+        {/* Status */}
+        {txStatus && (
+          <div className={`rounded-xl border p-4 text-sm whitespace-pre-line ${
+            txStatusType === "success"
+              ? "border-sol-green/30 bg-sol-green/5 text-sol-green"
+              : txStatusType === "error"
+                ? "border-red-500/30 bg-red-500/5 text-red-400"
+                : "border-border-subtle bg-bg-elevated text-muted"
+          }`}>
+            {txStatus}
+          </div>
+        )}
 
-      {/* Program Deployment Status */}
-      {programDeployed === false && (
-        <div className="rounded-lg bg-red-100/50 border border-red-300/50 p-3 text-xs">
-          <p className="font-semibold text-red-800 mb-1">❌ PROGRAMA NÃO ESTÁ DEPLOYADO</p>
-          <p className="text-red-700">
-            Execute: <code className="bg-red-100 px-1 rounded">cd anchor && anchor deploy --provider.cluster devnet</code>
-          </p>
-        </div>
-      )}
+        {/* Program Deployment Status */}
+        {programDeployed === false && (
+          <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-4">
+            <div className="flex items-center gap-2 text-red-400">
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="font-medium">Program Not Deployed</span>
+            </div>
+            <p className="mt-2 text-xs text-red-400/80">
+              Run: <code className="rounded bg-red-500/10 px-1.5 py-0.5">cd anchor && anchor deploy --provider.cluster devnet</code>
+            </p>
+          </div>
+        )}
 
-      {/* Network Warning */}
-      <div className="rounded-lg bg-yellow-100/50 border border-yellow-300/50 p-3 text-xs">
-        <p className="font-semibold text-yellow-800 mb-1">⚠️ DEVNET (Rede de Testes)</p>
-        <p className="text-yellow-700">
-          Programa: <code className="font-mono text-[10px]">{VAULT_PROGRAM_ADDRESS}</code>
-        </p>
+        {/* Network Info */}
+        <div className="flex items-center justify-between rounded-xl border border-border-subtle bg-bg-elevated/50 px-4 py-3">
+          <div className="flex items-center gap-2">
+            <span className="status-dot-pending" />
+            <span className="text-xs font-medium">Devnet</span>
+          </div>
+          <code className="font-mono text-[10px] text-subtle">
+            {VAULT_PROGRAM_ADDRESS.slice(0, 8)}...{VAULT_PROGRAM_ADDRESS.slice(-8)}
+          </code>
+        </div>
       </div>
-    </section>
+    </div>
   );
 }
