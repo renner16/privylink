@@ -27,35 +27,71 @@ interface StoredDeposit {
   amount: number;
   expiresAt: number;
   createdAt: number;
+  secret?: string;
+}
+
+// Gera magic link
+function encodeMagicLink(depositId: string, depositor: string, secret: string): string {
+  const data = `${depositId}:${depositor}:${secret}`;
+  return btoa(data).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+// Tempo restante formatado
+function timeRemaining(expiresAt: number): string {
+  const now = Math.floor(Date.now() / 1000);
+  const diff = expiresAt - now;
+
+  if (diff <= 0) return "Expirado";
+
+  const hours = Math.floor(diff / 3600);
+  const mins = Math.floor((diff % 3600) / 60);
+
+  if (hours > 24) {
+    const days = Math.floor(hours / 24);
+    return `${days}d ${hours % 24}h`;
+  }
+  if (hours > 0) return `${hours}h ${mins}m`;
+  return `${mins}m`;
 }
 
 export default function RefundPage() {
   const { wallet, status } = useWalletConnection();
   const { send, isSending } = useSendTransaction();
 
-  const [deposits, setDeposits] = useState<StoredDeposit[]>([]);
+  const [expiredDeposits, setExpiredDeposits] = useState<StoredDeposit[]>([]);
+  const [activeDeposits, setActiveDeposits] = useState<StoredDeposit[]>([]);
   const [txStatus, setTxStatus] = useState<string | null>(null);
   const [refundingId, setRefundingId] = useState<string | null>(null);
   const [manualId, setManualId] = useState("");
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const walletAddress = wallet?.account.address;
 
   // Carregar depósitos do localStorage
-  useEffect(() => {
+  const loadDeposits = useCallback(() => {
     if (typeof window === "undefined" || !walletAddress) return;
 
     const stored: StoredDeposit[] = JSON.parse(
       localStorage.getItem("privylink_deposits") || "[]"
     );
 
-    // Filtrar: apenas do wallet atual e expirados
     const now = Math.floor(Date.now() / 1000);
-    const expired = stored.filter(
-      (d) => d.depositor === walletAddress && d.expiresAt > 0 && d.expiresAt < now
-    );
+    const myDeposits = stored.filter((d) => d.depositor === walletAddress);
 
-    setDeposits(expired);
+    // Separar expirados e ativos
+    const expired = myDeposits.filter((d) => d.expiresAt > 0 && d.expiresAt < now);
+    const active = myDeposits.filter((d) => d.expiresAt === 0 || d.expiresAt >= now);
+
+    setExpiredDeposits(expired);
+    setActiveDeposits(active);
   }, [walletAddress]);
+
+  useEffect(() => {
+    loadDeposits();
+    // Atualizar a cada 30 segundos
+    const interval = setInterval(loadDeposits, 30000);
+    return () => clearInterval(interval);
+  }, [loadDeposits]);
 
   const handleRefund = useCallback(async (depositId: string) => {
     if (!walletAddress || !wallet) return;
@@ -104,9 +140,7 @@ export default function RefundPage() {
       const updated = stored.filter((d) => d.depositId !== depositId);
       localStorage.setItem("privylink_deposits", JSON.stringify(updated));
 
-      // Atualizar lista local
-      setDeposits((prev) => prev.filter((d) => d.depositId !== depositId));
-
+      loadDeposits();
       setTxStatus(`✅ Refund realizado!\nSignature: ${signature?.slice(0, 30)}...`);
 
     } catch (err: any) {
@@ -115,7 +149,7 @@ export default function RefundPage() {
 
       if (msg.includes("AlreadyClaimed") || msg.includes("0x1770")) {
         msg = "Ja foi resgatado/reembolsado!";
-        // Remover do localStorage pois já foi usado
+        // Remover do localStorage
         const stored: StoredDeposit[] = JSON.parse(
           localStorage.getItem("privylink_deposits") || "[]"
         );
@@ -123,7 +157,7 @@ export default function RefundPage() {
           "privylink_deposits",
           JSON.stringify(stored.filter((d) => d.depositId !== depositId))
         );
-        setDeposits((prev) => prev.filter((d) => d.depositId !== depositId));
+        loadDeposits();
       } else if (msg.includes("NotExpiredYet") || msg.includes("0x1774")) {
         msg = "Ainda nao expirou!";
       } else if (msg.includes("AccountNotFound")) {
@@ -134,7 +168,19 @@ export default function RefundPage() {
     }
 
     setRefundingId(null);
-  }, [walletAddress, wallet, send]);
+  }, [walletAddress, wallet, send, loadDeposits]);
+
+  const copyMagicLink = (deposit: StoredDeposit) => {
+    if (!deposit.secret) {
+      setTxStatus("❌ Secret não salvo. Use o magic link original.");
+      return;
+    }
+    const code = encodeMagicLink(deposit.depositId, deposit.depositor, deposit.secret);
+    const link = `${window.location.origin}/claim/${code}`;
+    navigator.clipboard.writeText(link);
+    setCopiedId(deposit.depositId);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
 
   // Não conectado
   if (status !== "connected") {
@@ -146,14 +192,16 @@ export default function RefundPage() {
         <div className="relative z-10 max-w-xl mx-auto px-6 py-12">
           <Link href="/" className="btn-ghost inline-flex items-center gap-2 mb-8">← Voltar</Link>
           <div className="glass-card p-8 text-center">
-            <div className="text-5xl mb-4">⚠️</div>
-            <h1 className="text-2xl font-bold mb-4 text-gradient">Refund</h1>
-            <p className="text-muted">Conecte sua wallet para ver depósitos expirados.</p>
+            <div className="text-5xl mb-4">📋</div>
+            <h1 className="text-2xl font-bold mb-4 text-gradient">Meus Depósitos</h1>
+            <p className="text-muted">Conecte sua wallet para ver seus depósitos.</p>
           </div>
         </div>
       </div>
     );
   }
+
+  const hasDeposits = expiredDeposits.length > 0 || activeDeposits.length > 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -165,23 +213,28 @@ export default function RefundPage() {
         <Link href="/" className="btn-ghost inline-flex items-center gap-2">← Voltar</Link>
 
         <div className="glass-card p-6">
-          <h1 className="text-2xl font-bold mb-2 text-gradient">Refund de Depósitos</h1>
-          <p className="text-sm text-muted">Recupere SOL de depósitos expirados.</p>
+          <h1 className="text-2xl font-bold mb-2 text-gradient">Meus Depósitos</h1>
+          <p className="text-sm text-muted">Acompanhe e gerencie seus depósitos.</p>
         </div>
 
-        {/* Lista de depósitos expirados */}
-        {deposits.length > 0 ? (
-          <div className="space-y-4">
-            <p className="text-sm text-muted">{deposits.length} depósito(s) expirado(s)</p>
+        {/* Depósitos Ativos */}
+        {activeDeposits.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-sol-green animate-pulse" />
+              <p className="text-sm font-medium">Em andamento ({activeDeposits.length})</p>
+            </div>
 
-            {deposits.map((d) => (
+            {activeDeposits.map((d) => (
               <div key={d.depositId} className="glass-card p-5 space-y-3">
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="text-2xl font-bold text-sol-green">{d.amount} SOL</p>
-                    <p className="text-xs text-muted font-mono">ID: {d.depositId}</p>
+                    <p className="text-xs text-muted font-mono">ID: {d.depositId.slice(0, 15)}...</p>
                   </div>
-                  <span className="badge-purple text-xs">Expirado</span>
+                  <span className="badge-green text-xs">
+                    {d.expiresAt === 0 ? "Sem expiração" : timeRemaining(d.expiresAt)}
+                  </span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 text-xs text-muted">
@@ -190,9 +243,44 @@ export default function RefundPage() {
                     <p className="text-foreground">{new Date(d.createdAt * 1000).toLocaleString()}</p>
                   </div>
                   <div>
-                    <p>Expirou</p>
-                    <p className="text-red-400">{new Date(d.expiresAt * 1000).toLocaleString()}</p>
+                    <p>Expira</p>
+                    <p className="text-foreground">
+                      {d.expiresAt === 0 ? "Nunca" : new Date(d.expiresAt * 1000).toLocaleString()}
+                    </p>
                   </div>
+                </div>
+
+                <button
+                  onClick={() => copyMagicLink(d)}
+                  className="btn-secondary w-full text-sm"
+                >
+                  {copiedId === d.depositId ? "✅ Copiado!" : "📋 Copiar Magic Link"}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Depósitos Expirados */}
+        {expiredDeposits.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-red-400" />
+              <p className="text-sm font-medium">Expirados ({expiredDeposits.length})</p>
+            </div>
+
+            {expiredDeposits.map((d) => (
+              <div key={d.depositId} className="glass-card p-5 space-y-3 border-red-500/20">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-2xl font-bold text-sol-green">{d.amount} SOL</p>
+                    <p className="text-xs text-muted font-mono">ID: {d.depositId.slice(0, 15)}...</p>
+                  </div>
+                  <span className="badge-purple text-xs">Expirado</span>
+                </div>
+
+                <div className="text-xs text-muted">
+                  <p>Expirou em <span className="text-red-400">{new Date(d.expiresAt * 1000).toLocaleString()}</span></p>
                 </div>
 
                 <button
@@ -206,24 +294,30 @@ export default function RefundPage() {
                       Processando...
                     </span>
                   ) : (
-                    "Recuperar SOL"
+                    "🔄 Recuperar SOL"
                   )}
                 </button>
               </div>
             ))}
           </div>
-        ) : (
+        )}
+
+        {/* Sem depósitos */}
+        {!hasDeposits && (
           <div className="glass-card p-8 text-center">
-            <div className="text-4xl mb-3">🕐</div>
-            <p className="font-semibold mb-1">Nenhum depósito expirado</p>
-            <p className="text-sm text-muted">Depósitos criados neste navegador aparecerão aqui quando expirarem.</p>
+            <div className="text-4xl mb-3">📭</div>
+            <p className="font-semibold mb-1">Nenhum depósito</p>
+            <p className="text-sm text-muted mb-4">Depósitos criados neste navegador aparecerão aqui.</p>
+            <Link href="/send" className="btn-primary inline-block">
+              Criar depósito
+            </Link>
           </div>
         )}
 
         {/* Input manual */}
         <div className="glass-card p-5 space-y-3">
           <p className="text-sm font-medium">Refund manual</p>
-          <p className="text-xs text-muted">Se criou o depósito em outro dispositivo, insira o ID:</p>
+          <p className="text-xs text-muted">Criou em outro dispositivo? Insira o Deposit ID:</p>
           <div className="flex gap-2">
             <input
               type="text"
@@ -253,11 +347,11 @@ export default function RefundPage() {
 
         {/* Info */}
         <div className="glass-card p-5 text-xs text-muted space-y-2">
-          <p className="font-medium text-foreground">Como funciona:</p>
+          <p className="font-medium text-foreground">Info:</p>
           <ul className="space-y-1">
-            <li>• Só depósitos expirados podem ser reembolsados</li>
-            <li>• Só o criador do depósito pode pedir refund</li>
-            <li>• O valor é devolvido menos taxa de rede (~0.00001 SOL)</li>
+            <li>• Depósitos ativos podem ser resgatados pelo destinatário</li>
+            <li>• Após expirar, só você pode recuperar os fundos</li>
+            <li>• Depósitos sem expiração nunca podem ser reembolsados</li>
           </ul>
         </div>
       </div>

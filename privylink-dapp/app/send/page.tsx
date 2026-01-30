@@ -189,6 +189,7 @@ export default function SendPage() {
           amount: parseFloat(amount),
           expiresAt,
           createdAt: Math.floor(Date.now() / 1000),
+          secret: secretCode, // Para poder copiar magic link depois
         });
         localStorage.setItem("privylink_deposits", JSON.stringify(stored));
       }
