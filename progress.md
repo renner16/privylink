@@ -44,6 +44,13 @@
 ## 🚧 Em progresso
 - (nenhum)
 
+## ✅ Testes Realizados (30/01/2026)
+- **Criar depósito:** ✅ Funcionando (0.01 SOL, expiração 1h)
+- **Magic Link:** ✅ Gerado corretamente com todos os parâmetros
+- **Claim com código errado:** ✅ Falha corretamente (InvalidSecret)
+- **Claim com código correto:** ✅ Receiver recebeu 0.009995 SOL
+- **Fluxo completo sender→receiver:** ✅ Testado com 2 wallets diferentes
+
 ## ⚠️ Problemas encontrados
 - (nenhum)
 
