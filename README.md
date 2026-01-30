@@ -87,13 +87,16 @@ Destinatário abre o link, insere o código secreto e resgata o SOL.
 - [x] Smart Contract (100%)
 - [x] Interface de Criar Depósito
 - [x] Interface de Claim
+- [x] Interface de Refund
 - [x] Magic Links + QR Codes
 - [x] Expiração Configurável
 - [x] Deploy na Devnet
+- [x] Design System Solana (dark mode, gradientes, glass cards)
+- [x] Testes de fluxo completo (sender → receiver)
 
-### Em Progresso
-- [ ] Interface de Refund
-- [ ] Melhorias de UX
+### Futuro
+- [ ] Taxa de 0.25% por transação
+- [ ] Integração Arcium MPC (Fase 2)
 
 ---
 
