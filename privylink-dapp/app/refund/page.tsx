@@ -22,8 +22,6 @@ const REFUND_EXPIRED_DISCRIMINATOR = new Uint8Array([
 
 const SYSTEM_PROGRAM_ADDRESS = "11111111111111111111111111111111" as Address;
 
-const LAMPORTS_PER_SOL = 1_000_000_000n;
-
 export default function RefundPage() {
   const { wallet, status } = useWalletConnection();
   const { send, isSending } = useSendTransaction();
@@ -114,18 +112,25 @@ export default function RefundPage() {
 
   if (status !== "connected") {
     return (
-      <div className="min-h-screen bg-bg1 text-foreground p-6">
-        <div className="max-w-xl mx-auto">
-          <Link href="/" className="text-sm text-muted hover:underline mb-4 inline-block">
-            &larr; Voltar
+      <div className="min-h-screen bg-background">
+        {/* Background glow */}
+        <div className="fixed inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-sol-purple/15 rounded-full blur-[120px]" />
+        </div>
+
+        <div className="relative z-10 max-w-xl mx-auto px-6 py-12">
+          <Link href="/" className="btn-ghost inline-flex items-center gap-2 mb-8">
+            ← Voltar
           </Link>
-          <div className="rounded-2xl border border-border-low bg-card p-6 shadow-lg">
-            <h1 className="text-2xl font-bold mb-4">Recuperar Deposito</h1>
-            <p className="text-muted mb-4">
+
+          <div className="glass-card p-8">
+            <h1 className="text-2xl font-bold mb-4 text-gradient">Recuperar Deposito</h1>
+            <p className="text-muted mb-6">
               Conecte sua wallet para recuperar depositos expirados.
             </p>
-            <div className="rounded-lg bg-yellow-100/50 border border-yellow-300/50 p-4 text-sm">
-              <p className="font-semibold text-yellow-800">Configure sua wallet para DEVNET</p>
+
+            <div className="card-section border-sol-purple/30 bg-sol-purple/5">
+              <p className="text-sm text-sol-purple font-medium">⚠️ Configure sua wallet para DEVNET</p>
             </div>
           </div>
         </div>
@@ -134,74 +139,83 @@ export default function RefundPage() {
   }
 
   return (
-    <div className="min-h-screen bg-bg1 text-foreground p-6">
-      <div className="max-w-xl mx-auto space-y-6">
-        <Link href="/" className="text-sm text-muted hover:underline mb-4 inline-block">
-          &larr; Voltar
+    <div className="min-h-screen bg-background">
+      {/* Background glow */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-sol-purple/15 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-sol-blue/10 rounded-full blur-[100px]" />
+      </div>
+
+      <div className="relative z-10 max-w-xl mx-auto px-6 py-12 space-y-6">
+        <Link href="/" className="btn-ghost inline-flex items-center gap-2">
+          ← Voltar
         </Link>
 
-        <div className="rounded-2xl border border-border-low bg-card p-6 shadow-lg space-y-6">
+        <div className="glass-card p-8 space-y-6">
           <div>
-            <h1 className="text-2xl font-bold mb-2">Recuperar Deposito Expirado</h1>
+            <h1 className="text-2xl font-bold mb-2 text-gradient">Recuperar Deposito Expirado</h1>
             <p className="text-sm text-muted">
               Se voce criou um deposito que expirou sem ser resgatado, pode recuperar os fundos aqui.
             </p>
           </div>
 
-          <div className="rounded-lg bg-amber-50 border border-amber-200 p-4 text-sm">
-            <p className="font-medium text-amber-800 mb-1">Importante:</p>
-            <ul className="text-amber-700 space-y-1 text-xs">
-              <li>Apenas o criador do deposito pode solicitar reembolso</li>
-              <li>O deposito deve ter expirado (passar da data limite)</li>
-              <li>Depositos sem expiracao nao podem ser reembolsados</li>
-              <li>Depositos ja resgatados nao podem ser reembolsados</li>
+          {/* Info Box */}
+          <div className="card-section border-sol-blue/30 bg-sol-blue/5">
+            <p className="font-medium text-sol-blue mb-2">Importante:</p>
+            <ul className="text-muted space-y-1 text-sm">
+              <li>• Apenas o criador do deposito pode solicitar reembolso</li>
+              <li>• O deposito deve ter expirado (passar da data limite)</li>
+              <li>• Depositos sem expiracao nao podem ser reembolsados</li>
+              <li>• Depositos ja resgatados nao podem ser reembolsados</li>
             </ul>
           </div>
 
           {!refunded ? (
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Deposit ID</label>
+                <label className="block text-sm font-medium mb-2">Deposit ID</label>
                 <input
                   type="text"
                   placeholder="Ex: 1706456789000"
                   value={depositId}
                   onChange={(e) => setDepositId(e.target.value)}
                   disabled={isSending}
-                  className="w-full rounded-lg border border-border-low bg-card px-4 py-3 outline-none transition focus:border-foreground/30 disabled:opacity-60"
+                  className="input"
                 />
-                <p className="text-xs text-muted mt-1">
+                <p className="text-xs text-muted mt-2">
                   O Deposit ID foi mostrado quando voce criou o deposito.
                 </p>
               </div>
 
-              <div className="rounded-lg bg-cream/50 border border-border-low p-3 text-sm">
-                <p className="text-muted">
-                  <span className="font-medium">Sua wallet:</span>{" "}
-                  <span className="font-mono text-xs">{walletAddress}</span>
+              {/* Wallet Info */}
+              <div className="card-section">
+                <p className="text-sm text-muted">
+                  <span className="font-medium text-foreground">Sua wallet:</span>{" "}
+                  <span className="font-mono text-xs text-sol-purple">{walletAddress}</span>
                 </p>
               </div>
 
               <button
                 onClick={handleRefund}
                 disabled={isSending || !depositId}
-                className="w-full rounded-lg bg-foreground px-4 py-3 text-lg font-medium text-background transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                className="btn-primary w-full"
               >
                 {isSending ? "Processando..." : "Recuperar Fundos"}
               </button>
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="rounded-lg bg-green-50 border border-green-200 p-4 text-center">
-                <p className="text-2xl mb-2">Sucesso!</p>
-                <p className="text-green-700">Os fundos foram devolvidos para sua wallet.</p>
+              <div className="card-section border-sol-green/30 bg-sol-green/10 text-center">
+                <p className="text-3xl mb-2">✅</p>
+                <p className="text-sol-green font-semibold">Sucesso!</p>
+                <p className="text-sm text-muted mt-1">Os fundos foram devolvidos para sua wallet.</p>
               </div>
               <button
                 onClick={() => {
                   setRefunded(false);
                   setTxStatus(null);
                 }}
-                className="w-full rounded-lg border border-border-low px-4 py-3 font-medium hover:bg-cream/50 transition"
+                className="btn-secondary w-full"
               >
                 Recuperar outro deposito
               </button>
@@ -210,12 +224,12 @@ export default function RefundPage() {
 
           {/* Status */}
           {txStatus && (
-            <div className={`rounded-lg border px-4 py-3 text-sm whitespace-pre-line ${
+            <div className={`card-section text-sm whitespace-pre-line ${
               refunded
-                ? "border-green-200 bg-green-50 text-green-800"
+                ? "border-sol-green/30 bg-sol-green/10 text-sol-green"
                 : txStatus.includes("Erro")
-                ? "border-red-200 bg-red-50 text-red-800"
-                : "border-border-low bg-cream/50"
+                ? "border-red-500/30 bg-red-500/10 text-red-400"
+                : "border-border text-muted"
             }`}>
               {txStatus}
             </div>
@@ -223,7 +237,7 @@ export default function RefundPage() {
         </div>
 
         {/* Help Card */}
-        <div className="rounded-xl border border-border-low bg-card p-4 text-sm text-muted">
+        <div className="glass-card p-6 text-sm text-muted">
           <p className="font-medium text-foreground mb-2">Onde encontrar o Deposit ID?</p>
           <p>
             O Deposit ID e mostrado na tela de sucesso apos criar um deposito.

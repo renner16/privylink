@@ -1,61 +1,273 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: oklch(0.145 0 0); /* deep neutral */
-  --border-strong: oklch(0.839 0.0187 78.23);
-  --border-low: oklch(0.927 0.0122 96.43);
-  --accent: oklch(0 0 0);
-  --muted: #3a3a3a; /* darker for better light-mode contrast */
-  --cream: oklch(0.9553 0.0029 84.56);
-  --card: #ffffff;
-  --card-foreground: oklch(0.145 0 0);
-  --radius: 0.625rem;
-  --font-sans: var(--font-inter), system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
-}
+/* ========================================
+   SOLANA DESIGN SYSTEM - PrivyLink
+   ======================================== */
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --border-strong: oklch(1 0 0 / 0.12);
-    --border-low: oklch(1 0 0 / 0.08);
-    --accent: oklch(0.922 0 0);
-    --muted: oklch(0.75 0.01 260); /* brighten muted text in dark mode */
-    --cream: oklch(0.22 0.009 70.82);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-  }
+:root {
+  /* Solana Brand Colors */
+  --sol-purple: #9945FF;
+  --sol-green: #14F195;
+  --sol-blue: #00D4AA;
+  --sol-pink: #F971FF;
+
+  /* Dark Theme (Default) */
+  --background: #0D0D0D;
+  --background-secondary: #141414;
+  --foreground: #FFFFFF;
+  --foreground-muted: #A1A1AA;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.15);
+
+  /* Card */
+  --card: rgba(20, 20, 20, 0.8);
+  --card-hover: rgba(30, 30, 30, 0.9);
+
+  /* Accents */
+  --accent: var(--sol-purple);
+  --accent-green: var(--sol-green);
+  --accent-blue: var(--sol-blue);
+
+  /* Gradients */
+  --gradient-solana: linear-gradient(135deg, var(--sol-purple) 0%, var(--sol-green) 100%);
+  --gradient-purple-blue: linear-gradient(135deg, var(--sol-purple) 0%, var(--sol-blue) 100%);
+  --gradient-glow: radial-gradient(ellipse at center, rgba(153, 69, 255, 0.15) 0%, transparent 70%);
+
+  /* Fonts */
+  --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  /* Radius */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
 }
 
 @theme inline {
   --color-background: var(--background);
-  --color-bg1: var(--background);
+  --color-background-secondary: var(--background-secondary);
   --color-foreground: var(--foreground);
-  --color-cream: var(--cream);
-  --color-border: var(--border-strong);
+  --color-muted: var(--foreground-muted);
+  --color-border: var(--border);
   --color-border-strong: var(--border-strong);
-  --color-border-low: var(--border-low);
-  --color-primary: var(--accent);
-  --color-muted: var(--muted);
   --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
+  --color-card-hover: var(--card-hover);
+  --color-accent: var(--accent);
+  --color-accent-green: var(--accent-green);
+  --color-accent-blue: var(--accent-blue);
+  --color-sol-purple: var(--sol-purple);
+  --color-sol-green: var(--sol-green);
+  --color-sol-blue: var(--sol-blue);
+  --color-sol-pink: var(--sol-pink);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
 }
+
+/* ========================================
+   BASE STYLES
+   ======================================== */
 
 @layer base {
   * {
-    @apply border-border outline-transparent;
+    @apply border-border;
+  }
+
+  html {
+    color-scheme: dark;
   }
 
   body {
-    @apply bg-bg1 text-foreground antialiased;
+    @apply bg-background text-foreground antialiased;
     font-family: var(--font-sans);
-    color-scheme: light dark;
+    background-image: var(--gradient-glow);
+    background-attachment: fixed;
+    min-height: 100vh;
   }
+}
+
+/* ========================================
+   COMPONENT CLASSES
+   ======================================== */
+
+@layer components {
+  /* Glass Card */
+  .glass-card {
+    @apply relative rounded-xl border border-border bg-card backdrop-blur-xl;
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+      0 20px 50px -20px rgba(0, 0, 0, 0.5);
+  }
+
+  .glass-card:hover {
+    @apply bg-card-hover border-border-strong;
+  }
+
+  /* Primary Button - Gradient */
+  .btn-primary {
+    @apply relative px-6 py-3 rounded-lg font-semibold text-white overflow-hidden transition-all duration-300;
+    background: var(--gradient-solana);
+    box-shadow: 0 0 20px rgba(153, 69, 255, 0.3);
+  }
+
+  .btn-primary:hover {
+    @apply scale-[1.02];
+    box-shadow: 0 0 30px rgba(153, 69, 255, 0.5);
+  }
+
+  .btn-primary:disabled {
+    @apply opacity-50 cursor-not-allowed scale-100;
+    box-shadow: none;
+  }
+
+  /* Secondary Button */
+  .btn-secondary {
+    @apply px-6 py-3 rounded-lg font-semibold border border-border-strong bg-background-secondary text-foreground transition-all duration-200;
+  }
+
+  .btn-secondary:hover {
+    @apply bg-card-hover;
+    border-color: rgba(153, 69, 255, 0.5);
+  }
+
+  .btn-secondary:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+
+  /* Ghost Button */
+  .btn-ghost {
+    @apply px-4 py-2 rounded-lg font-medium text-muted transition-all duration-200;
+  }
+
+  .btn-ghost:hover {
+    @apply text-foreground bg-border;
+  }
+
+  /* Input */
+  .input {
+    @apply w-full px-4 py-3 rounded-lg border border-border bg-background-secondary text-foreground transition-all duration-200 outline-none;
+  }
+
+  .input::placeholder {
+    @apply text-muted;
+  }
+
+  .input:focus {
+    border-color: rgba(153, 69, 255, 0.5);
+    box-shadow: 0 0 0 3px rgba(153, 69, 255, 0.1);
+  }
+
+  .input:disabled {
+    @apply opacity-60 cursor-not-allowed;
+  }
+
+  /* Badge Base */
+  .badge-purple {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide;
+    background-color: rgba(153, 69, 255, 0.2);
+    color: var(--sol-purple);
+  }
+
+  .badge-green {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide;
+    background-color: rgba(20, 241, 149, 0.2);
+    color: var(--sol-green);
+  }
+
+  .badge-blue {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide;
+    background-color: rgba(0, 212, 170, 0.2);
+    color: var(--sol-blue);
+  }
+
+  .badge-muted {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide bg-border text-muted;
+  }
+
+  /* Card Section */
+  .card-section {
+    @apply p-4 rounded-xl border border-border;
+    background-color: rgba(20, 20, 20, 0.5);
+  }
+
+  /* Glow Effect */
+  .glow-purple {
+    box-shadow: 0 0 40px rgba(153, 69, 255, 0.3);
+  }
+
+  .glow-green {
+    box-shadow: 0 0 40px rgba(20, 241, 149, 0.3);
+  }
+
+  /* Gradient Text */
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: var(--gradient-solana);
+  }
+
+  /* Status indicators */
+  .status-connected {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide;
+    background-color: rgba(20, 241, 149, 0.2);
+    color: var(--sol-green);
+  }
+
+  .status-disconnected {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide bg-border text-muted;
+  }
+
+  .status-error {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide;
+    background-color: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+  }
+
+  /* Link style */
+  .link {
+    @apply underline underline-offset-2 transition-colors;
+    color: var(--sol-purple);
+  }
+
+  .link:hover {
+    color: var(--sol-green);
+  }
+
+  /* Divider */
+  .divider {
+    @apply w-full h-px bg-border my-6;
+  }
+}
+
+/* ========================================
+   ANIMATIONS
+   ======================================== */
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(153, 69, 255, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(153, 69, 255, 0.5);
+  }
+}
+
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 3s ease infinite;
 }

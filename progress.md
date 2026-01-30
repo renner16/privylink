@@ -1,7 +1,7 @@
 # PrivyLink — Progresso
 
 ## Última atualização
-29/01/2026 23:30
+30/01/2026 10:45
 
 ## ✅ Concluído
 - Estrutura base do projeto (Next.js 16 + Anchor)
@@ -29,14 +29,17 @@
   - Solução: Manipulação direta de lamports (`try_borrow_mut_lamports()`)
 - **[29/01]** Deploy na Devnet realizado com sucesso:
   - Program ID: `98WwJxc1aAeqGWuaouQntJYmdQEnELntf9BqKXD3o34W`
-- **[29/01 23:30] REDESIGN VISUAL ESTILO SOLANA**:
+- **[30/01] REDESIGN VISUAL ESTILO SOLANA** (refeito):
   - Design system completo em `globals.css` com tokens Solana
   - Cores: Purple (#9945FF), Green (#14F195), Blue (#00D4AA)
   - Componentes: glass-card, btn-primary, btn-secondary, badges, inputs
-  - Gradientes e efeitos de glow
-  - Landing page redesenhada com visual product-first
-  - VaultCard redesenhado com novo visual
-  - Refund page redesenhada
+  - Gradientes e efeitos de glow com backdrop-blur
+  - Background com efeitos de luz (glow spheres)
+  - Landing page redesenhada com visual moderno
+  - Página /send com tabs (Enviar/Resgatar)
+  - Página /claim redesenhada
+  - Página /refund redesenhada
+  - Dark mode por padrão
 
 ## 🚧 Em progresso
 - (nenhum)
