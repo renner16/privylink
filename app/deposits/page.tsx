@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useWalletConnection, useSendTransaction } from "@solana/react-hooks";
 import { AccountRole, type Address, getProgramDerivedAddress, getAddressEncoder } from "@solana/kit";
 import { VAULT_PROGRAM_ADDRESS } from "../generated/vault";
@@ -55,7 +55,7 @@ interface Deposit {
   status: "active" | "expired" | "claimed";
 }
 
-export default function DepositsPage() {
+function DepositsContent() {
   const { wallet, status } = useWalletConnection();
   const { send, isSending } = useSendTransaction();
   const searchParams = useSearchParams();
@@ -470,5 +470,24 @@ export default function DepositsPage() {
         )}
       </main>
     </div>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen bg-bg-primary text-foreground flex items-center justify-center">
+      <div className="text-center">
+        <div className="spinner mx-auto mb-4" style={{ width: "2rem", height: "2rem" }} />
+        <p className="text-muted">Loading...</p>
+      </div>
+    </div>
+  );
+}
+
+export default function DepositsPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <DepositsContent />
+    </Suspense>
   );
 }
