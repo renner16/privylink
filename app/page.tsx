@@ -413,7 +413,7 @@ export default function Home() {
                               <span className="ml-auto text-xs text-sol-green">Recommended</span>
                             )}
                             {isAvailable && !walletOption.recommended && (
-                              <span className="ml-auto text-xs text-sol-green">Connect</span>
+                              <span className="ml-auto text-xs text-muted">Detected</span>
                             )}
                             {!isAvailable && (
                               <span className="ml-auto text-[10px] text-muted">Install</span>
