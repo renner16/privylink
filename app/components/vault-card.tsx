@@ -50,13 +50,14 @@ export function VaultCard() {
   const walletAddress = wallet?.account.address;
   const [programDeployed, setProgramDeployed] = useState<boolean | null>(null);
 
-  // Parse Magic Link from URL
+  // Parse Magic Link and Tab from URL
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     const depositor = params.get("depositor");
     const depositId = params.get("deposit_id") || params.get("id");
     const secret = params.get("secret");
+    const tab = params.get("tab");
 
     if (depositor && depositId) {
       setClaimDepositor(depositor);
@@ -64,6 +65,12 @@ export function VaultCard() {
       if (secret) setClaimSecret(secret);
       setActiveTab("claim");
       window.history.replaceState({}, "", window.location.pathname);
+    } else if (tab === "claim") {
+      setActiveTab("claim");
+      window.history.replaceState({}, "", window.location.pathname + window.location.hash);
+    } else if (tab === "send") {
+      setActiveTab("create");
+      window.history.replaceState({}, "", window.location.pathname + window.location.hash);
     }
   }, []);
 
@@ -227,8 +234,13 @@ export function VaultCard() {
     } catch (err: any) {
       console.error("Claim failed:", err);
       let msg = err?.message || "Unknown error";
-      if (msg.includes("InvalidSecret") || msg.includes("#6001")) msg = "Invalid secret code!";
-      else if (msg.includes("AlreadyClaimed") || msg.includes("#6000")) msg = "Already claimed!";
+      if (msg.includes("InvalidSecret") || msg.includes("#6001")) {
+        msg = "Invalid secret code. Please check and try again.";
+      } else if (msg.includes("AlreadyClaimed") || msg.includes("#6000")) {
+        msg = "This deposit has already been claimed or refunded. The funds are no longer available.";
+      } else if (msg.includes("DepositExpired") || msg.includes("#6003")) {
+        msg = "This deposit has expired. The sender can now refund it.";
+      }
       setTxStatus(msg);
       setTxStatusType("error");
     }
@@ -271,7 +283,13 @@ export function VaultCard() {
         {/* Tabs */}
         <div className="mb-6 flex rounded-lg bg-bg-elevated p-1">
           <button
-            onClick={() => setActiveTab("create")}
+            onClick={() => {
+              setActiveTab("create");
+              setMagicLink(null);
+              setLastDepositSecret(null);
+              setLastDepositId(null);
+              setTxStatus(null);
+            }}
             className={`flex-1 rounded-md px-4 py-2.5 text-sm font-medium transition ${
               activeTab === "create"
                 ? "bg-sol-purple text-white"
@@ -281,7 +299,10 @@ export function VaultCard() {
             Send
           </button>
           <button
-            onClick={() => setActiveTab("claim")}
+            onClick={() => {
+              setActiveTab("claim");
+              setTxStatus(null);
+            }}
             className={`flex-1 rounded-md px-4 py-2.5 text-sm font-medium transition ${
               activeTab === "claim"
                 ? "bg-sol-purple text-white"
@@ -328,7 +349,7 @@ export function VaultCard() {
                   title="Generate random secret"
                 >
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                   </svg>
                 </button>
               </div>
@@ -348,7 +369,6 @@ export function VaultCard() {
                 <option value="72">3 days</option>
                 <option value="168">7 days</option>
                 <option value="720">30 days</option>
-                <option value="0">No expiration</option>
               </select>
             </div>
 

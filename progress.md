@@ -1,7 +1,7 @@
 # PrivyLink — Progresso
 
 ## Última atualização
-30/01/2026 17:00
+31/01/2026 22:30
 
 ## ✅ Concluído
 - Estrutura base do projeto (Next.js 16 + Anchor)
@@ -25,34 +25,19 @@
   - Solução: Manipulação direta de lamports (`try_borrow_mut_lamports()`)
 - **[29/01]** Deploy na Devnet realizado com sucesso:
   - Program ID: `98WwJxc1aAeqGWuaouQntJYmdQEnELntf9BqKXD3o34W`
-- **[30/01] REDESIGN FINAL** - Estilo Solana Privacy Hack:
-  - **Design System Completo** (`globals.css`):
-    - Paleta de cores: purple #9945FF, green #14F195
-    - Tokens CSS para spacing, typography, radii, shadows
-    - Utilities: card, card-hover, card-glow, btn-primary, btn-secondary
-    - Badges: badge, badge-purple, badge-green
-    - Form elements: input, select
-    - Animations: spin, pulse, fadeIn
-  - **Landing Page** (`page.tsx`):
-    - Hero: "Private Transfers on Solana" + 2 CTAs
-    - How It Works: 3 steps grid
-    - Privacy by Design: 6 feature cards
-    - Roadmap: 3 phases timeline
-    - Footer: GitHub, Devnet, Solana Privacy Hack 2026
-  - **Send/Claim** (`vault-card.tsx`):
-    - Tabs: Send / Claim
-    - Formulário limpo
-    - Success state com QR Code elegante
-    - Feedback visual premium
-  - **My Deposits** (`/deposits`):
-    - Stats cards: Total, Active, Expired, SOL Locked
-    - Tabs: All, Active, Expired
-    - Grid de depósitos com ações
-    - Refund direto na página
-  - **Redirect** `/refund` → `/deposits?tab=expired`
-  - Textos em inglês (padrão hackathon)
-  - Mobile-first responsivo
-  - Carteira Brave removida
+- **[30/01] REDESIGN FINAL** - Estilo Solana Privacy Hack
+- **[31/01] POLISH FINAL** - Melhorias UX/UI:
+  - **Nova logo** PrivyLink (substituiu cadeado genérico)
+  - **Logo Solflare** oficial adicionada
+  - **Efeito Typewriter** no badge hero (alterna PRIVACY_HACKATHON_2026 / PRIVY_LINK)
+  - **Header inteligente**: some ao scrollar para baixo, aparece ao scrollar para cima
+  - **Dropdown de wallets** no header (botão Connect abre opções)
+  - **Navegação por tabs via URL**: ?tab=send e ?tab=claim funcionando
+  - **Cards com borda branca** (#fff, 2px)
+  - **Animações scroll reveal** nos cards (fade-in de baixo para cima com delays)
+  - **Brave Wallet removido** da lista de wallets
+  - **Link GitHub** atualizado: github.com/renner16/privylink com ícone
+  - **Layout reformulado**: card de wallet em cima, card Send/Claim em largura total
 
 ## 🚧 Em progresso
 - (nenhum)
@@ -68,16 +53,11 @@
 - (nenhum)
 
 ## 📋 Próximos passos
-1. ~~Resolver funcionalidade de claim~~ ✅ FEITO
-2. ~~Fazer deploy do programa na devnet~~ ✅ FEITO
-3. ~~Corrigir bug do System Program transfer~~ ✅ FEITO
-4. ~~Adicionar QR code para Magic Link~~ ✅ FEITO
-5. ~~Adicionar expiração + refund~~ ✅ FEITO
-6. ~~Redesign visual estilo Solana~~ ✅ FEITO
-7. ~~Página My Deposits com dashboard~~ ✅ FEITO
-8. (Opcional) Fazer commit e push das mudanças
-9. (Futuro) Taxa de 0.25%
-10. (Futuro) Integração Arcium MPC (Fase 2)
+1. Gravar vídeo demo (3 minutos)
+2. Fazer commit e push das mudanças
+3. Submeter no hackathon (deadline: 1 de Fevereiro 2026)
+4. (Futuro) Taxa de 0.25%
+5. (Futuro) Integração Arcium MPC (Fase 2)
 
 ## 📊 Informações do Deploy
 
@@ -86,3 +66,5 @@
 | Program ID | `98WwJxc1aAeqGWuaouQntJYmdQEnELntf9BqKXD3o34W` |
 | Network | Devnet |
 | Upgrade Authority | `88rk9ofbfoh8iBLYX9NNS9NKCNZbbAJgfYppzNUd8LYU` |
+| RPC | Helius (devnet.helius-rpc.com) |
+| GitHub | github.com/renner16/privylink |

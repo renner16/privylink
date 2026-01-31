@@ -2,12 +2,120 @@
 import { useWalletConnection } from "@solana/react-hooks";
 import { VaultCard } from "./components/vault-card";
 import Link from "next/link";
+import { useState, useEffect, useRef, ReactNode } from "react";
+
+// Animated card component with scroll reveal
+function AnimatedCard({ children, className, delay = 0 }: { children: ReactNode; className?: string; delay?: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (ref.current) {
+      observer.observe(ref.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      className={className}
+      style={{
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? 'translateY(0)' : 'translateY(40px)',
+        transition: `opacity 0.6s ease-out ${delay}s, transform 0.6s ease-out ${delay}s`,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function TypewriterText({ texts, speed = 100, deleteSpeed = 50, pauseDuration = 2000 }: {
+  texts: string[];
+  speed?: number;
+  deleteSpeed?: number;
+  pauseDuration?: number;
+}) {
+  const [displayText, setDisplayText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [textIndex, setTextIndex] = useState(0);
+
+  const currentText = texts[textIndex];
+
+  useEffect(() => {
+    let timeout: NodeJS.Timeout;
+
+    if (!isDeleting && displayText === currentText) {
+      timeout = setTimeout(() => setIsDeleting(true), pauseDuration);
+    } else if (isDeleting && displayText === "") {
+      timeout = setTimeout(() => {
+        setTextIndex((prev) => (prev + 1) % texts.length);
+        setIsDeleting(false);
+      }, 500);
+    } else if (isDeleting) {
+      timeout = setTimeout(() => {
+        setDisplayText(currentText.slice(0, displayText.length - 1));
+      }, deleteSpeed);
+    } else {
+      timeout = setTimeout(() => {
+        setDisplayText(currentText.slice(0, displayText.length + 1));
+      }, speed);
+    }
+
+    return () => clearTimeout(timeout);
+  }, [displayText, isDeleting, currentText, texts.length, speed, deleteSpeed, pauseDuration]);
+
+  return (
+    <span className="typewriter-text">
+      {displayText}
+      <span className="typewriter-cursor">|</span>
+    </span>
+  );
+}
 
 export default function Home() {
   const { connectors, connect, disconnect, wallet, status } =
     useWalletConnection();
 
   const address = wallet?.account.address.toString();
+
+  // Header hide/show on scroll
+  const [headerVisible, setHeaderVisible] = useState(true);
+  const lastScrollY = useRef(0);
+
+  // Wallet dropdown
+  const [walletDropdownOpen, setWalletDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      if (currentScrollY < 100) {
+        setHeaderVisible(true);
+      } else if (currentScrollY > lastScrollY.current) {
+        setHeaderVisible(false);
+      } else {
+        setHeaderVisible(true);
+      }
+
+      lastScrollY.current = currentScrollY;
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   return (
     <div className="min-h-screen bg-bg-primary text-foreground">
@@ -28,28 +136,11 @@ export default function Home() {
       </div>
 
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border-subtle bg-bg-primary/80 backdrop-blur-xl">
+      <header className={`fixed top-0 left-0 right-0 z-50 border-b border-border-subtle bg-bg-primary/80 backdrop-blur-xl transition-transform duration-300 ${headerVisible ? 'translate-y-0' : '-translate-y-full'}`}>
         <div className="container-main flex h-16 items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sol-purple">
-              <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-            </div>
-            <span className="text-lg font-semibold">PrivyLink</span>
+          <Link href="/" className="flex items-center">
+            <img src="/logo-privylink.png" alt="PrivyLink" className="h-8" />
           </Link>
-
-          <nav className="hidden items-center gap-8 md:flex">
-            <a href="#how-it-works" className="text-sm text-muted transition hover:text-foreground">
-              How It Works
-            </a>
-            <a href="#features" className="text-sm text-muted transition hover:text-foreground">
-              Features
-            </a>
-            <Link href="/deposits" className="text-sm text-muted transition hover:text-foreground">
-              My Deposits
-            </Link>
-          </nav>
 
           <div className="flex items-center gap-4">
             {status === "connected" ? (
@@ -66,17 +157,84 @@ export default function Home() {
                 </button>
               </>
             ) : (
-              <span className="text-sm text-muted">Not Connected</span>
+              <div className="relative">
+                <button
+                  onClick={() => setWalletDropdownOpen(!walletDropdownOpen)}
+                  className="btn-primary py-2 text-xs"
+                >
+                  Connect
+                </button>
+
+                {walletDropdownOpen && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setWalletDropdownOpen(false)}
+                    />
+                    <div className="absolute right-0 top-full mt-2 z-50 w-56 rounded-lg border border-border-subtle bg-bg-primary p-2 shadow-lg">
+                      {(() => {
+                        const solflare = connectors.find(
+                          (c) => c.name.toLowerCase().includes("solflare")
+                        );
+                        if (solflare) {
+                          return (
+                            <button
+                              onClick={() => {
+                                connect(solflare.id);
+                                setWalletDropdownOpen(false);
+                              }}
+                              disabled={status === "connecting"}
+                              className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm hover:bg-bg-elevated transition"
+                            >
+                              <img src="/solflare.png" alt="Solflare" className="h-5 w-5" />
+                              <span>Solflare</span>
+                              <span className="ml-auto text-xs text-sol-green">Recommended</span>
+                            </button>
+                          );
+                        }
+                        return null;
+                      })()}
+                      {connectors
+                        .filter((c) => !c.name.toLowerCase().includes("solflare") && !c.name.toLowerCase().includes("brave"))
+                        .map((connector) => (
+                          <button
+                            key={connector.id}
+                            onClick={() => {
+                              connect(connector.id);
+                              setWalletDropdownOpen(false);
+                            }}
+                            disabled={status === "connecting"}
+                            className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm hover:bg-bg-elevated transition"
+                          >
+                            <span className="h-5 w-5 rounded-full bg-bg-elevated" />
+                            <span>{connector.name}</span>
+                          </button>
+                        ))}
+                      <div className="mt-2 border-t border-border-subtle pt-2">
+                        <p className="px-3 py-1 text-[10px] text-muted">Configure: Settings → Network → Devnet</p>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
             )}
           </div>
         </div>
       </header>
 
+      {/* Spacer for fixed header */}
+      <div className="h-16" />
+
       <main className="relative z-10">
         {/* ==================== HERO SECTION ==================== */}
         <section className="container-main py-24 lg:py-32">
           <div className="mx-auto max-w-4xl text-center">
-            <span className="badge-purple mb-6 inline-flex">Solana Privacy Hack 2026</span>
+            <span className="badge-purple mb-6 inline-flex items-center gap-2 text-sm px-5 py-2">
+                <svg className="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                <TypewriterText texts={["PRIVACY_HACKATHON_2026", "PRIVY_LINK"]} speed={80} deleteSpeed={40} pauseDuration={3000} />
+              </span>
 
             <h1 className="heading-1 mb-6 text-5xl md:text-6xl lg:text-7xl">
               <span className="text-gradient">Private Transfers</span>
@@ -90,10 +248,10 @@ export default function Home() {
             </p>
 
             <div className="flex flex-wrap items-center justify-center gap-4">
-              <a href="#send" className="btn-primary px-8 py-4 text-base">
+              <a href="?tab=send#send" className="btn-primary px-8 py-4 text-base">
                 Send Privately
               </a>
-              <a href="#send" className="btn-secondary px-8 py-4 text-base">
+              <a href="?tab=claim#send" className="btn-secondary px-8 py-4 text-base">
                 Claim Transfer
               </a>
             </div>
@@ -111,48 +269,49 @@ export default function Home() {
 
           <div className="grid gap-8 md:grid-cols-3">
             {/* Step 1 */}
-            <div className="card-hover text-center">
+            <AnimatedCard className="card-hover text-center" delay={0}>
               <div className="step-number mx-auto mb-6">1</div>
               <h3 className="heading-3 mb-3">Commit Funds</h3>
               <p className="body-small">
                 Deposit SOL into a neutral vault PDA with a secret hash.
                 Your funds are securely locked until claimed or refunded.
               </p>
-            </div>
+            </AnimatedCard>
 
             {/* Step 2 */}
-            <div className="card-hover text-center">
+            <AnimatedCard className="card-hover text-center" delay={0.15}>
               <div className="step-number mx-auto mb-6">2</div>
               <h3 className="heading-3 mb-3">Share Private Link</h3>
               <p className="body-small">
                 Generate a magic link with the deposit details.
                 Share it with your recipient through any secure channel.
               </p>
-            </div>
+            </AnimatedCard>
 
             {/* Step 3 */}
-            <div className="card-hover text-center">
+            <AnimatedCard className="card-hover text-center" delay={0.3}>
               <div className="step-number mx-auto mb-6">3</div>
               <h3 className="heading-3 mb-3">Claim with Secret</h3>
               <p className="body-small">
                 The recipient proves knowledge of the secret code
                 and receives the SOL directly to their wallet.
               </p>
-            </div>
+            </AnimatedCard>
           </div>
         </section>
 
         {/* ==================== SEND / CLAIM SECTION ==================== */}
         <section id="send" className="container-main py-24 scroll-mt-20">
-          <div className="grid gap-8 lg:grid-cols-5">
-            {/* Wallet Sidebar */}
-            <div className="lg:col-span-2">
-              <div className="card lg:sticky lg:top-24">
-                <h2 className="heading-3 mb-4">Connect Wallet</h2>
-
-                {status !== "connected" ? (
-                  <div className="space-y-4">
-                    {/* Solflare - Primary */}
+          <div className="mx-auto max-w-3xl space-y-6">
+            {/* Wallet Card - Top */}
+            <div className="card">
+              {status !== "connected" ? (
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h2 className="heading-3 mb-1">Connect Wallet</h2>
+                    <p className="text-xs text-muted">Settings → Network → Devnet</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
                     {(() => {
                       const solflare = connectors.find(
                         (c) => c.name.toLowerCase().includes("solflare")
@@ -162,73 +321,55 @@ export default function Home() {
                           <button
                             onClick={() => connect(solflare.id)}
                             disabled={status === "connecting"}
-                            className="btn-primary w-full justify-start gap-3 py-4"
+                            className="btn-primary gap-2 py-2.5"
                           >
-                            <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10">
-                              <svg className="h-6 w-6" viewBox="0 0 32 32" fill="currentColor">
-                                <path d="M16 0L3 8v16l13 8 13-8V8L16 0zm0 4l9 5.5v11L16 26l-9-5.5v-11L16 4z" />
-                              </svg>
-                            </span>
-                            <span className="text-left">
-                              <span className="block font-semibold">Solflare</span>
-                              <span className="block text-xs opacity-70">Recommended</span>
-                            </span>
+                            <img src="/solflare.png" alt="Solflare" className="h-5 w-5" />
+                            Solflare
                           </button>
                         );
                       }
                       return null;
                     })()}
-
-                    {/* Other Wallets */}
-                    <div className="space-y-2">
-                      <p className="text-xs font-medium uppercase tracking-wider text-muted">
-                        Other Wallets
-                      </p>
-                      {connectors
-                        .filter((c) => !c.name.toLowerCase().includes("solflare"))
-                        .map((connector) => (
-                          <button
-                            key={connector.id}
-                            onClick={() => connect(connector.id)}
-                            disabled={status === "connecting"}
-                            className="card-hover w-full p-4 text-left"
-                          >
-                            <span className="font-medium">{connector.name}</span>
-                          </button>
-                        ))}
-                    </div>
-
-                    {/* Devnet Notice */}
-                    <div className="rounded-lg border border-sol-purple/20 bg-sol-purple/5 p-4">
-                      <p className="text-xs font-medium text-sol-purple">Configure for Devnet</p>
-                      <p className="mt-1 text-xs text-muted">
-                        Settings → Network → Devnet
-                      </p>
+                    {connectors
+                      .filter((c) => !c.name.toLowerCase().includes("solflare") && !c.name.toLowerCase().includes("brave"))
+                      .map((connector) => (
+                        <button
+                          key={connector.id}
+                          onClick={() => connect(connector.id)}
+                          disabled={status === "connecting"}
+                          className="btn-secondary py-2.5"
+                        >
+                          {connector.name}
+                        </button>
+                      ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="status-online" />
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-wider text-muted">Connected</p>
+                      <code className="font-mono text-sm">{address?.slice(0, 8)}...{address?.slice(-8)}</code>
                     </div>
                   </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="rounded-lg bg-bg-elevated p-4">
-                      <p className="mb-1 text-xs font-medium uppercase tracking-wider text-muted">
-                        Connected Wallet
-                      </p>
-                      <code className="block break-all font-mono text-sm">{address}</code>
-                    </div>
-                    <Link href="/deposits" className="btn-secondary w-full">
+                  <div className="flex gap-2">
+                    <Link href="/deposits" className="btn-secondary py-2.5">
                       <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                       </svg>
                       My Deposits
                     </Link>
+                    <button onClick={() => disconnect()} className="btn-ghost text-xs">
+                      Disconnect
+                    </button>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
 
-            {/* Vault Card */}
-            <div className="lg:col-span-3">
-              <VaultCard />
-            </div>
+            {/* Vault Card - Full Width */}
+            <VaultCard />
           </div>
         </section>
 
@@ -274,7 +415,7 @@ export default function Home() {
                 desc: "Fully auditable smart contracts and frontend. Trust through transparency."
               },
             ].map((feature, i) => (
-              <div key={i} className="card-glow">
+              <AnimatedCard key={i} className="card-glow" delay={i * 0.1}>
                 <div className="feature-icon mb-4">
                   <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={feature.icon} />
@@ -282,7 +423,7 @@ export default function Home() {
                 </div>
                 <h3 className="heading-3 mb-2">{feature.title}</h3>
                 <p className="body-small">{feature.desc}</p>
-              </div>
+              </AnimatedCard>
             ))}
           </div>
         </section>
@@ -298,7 +439,7 @@ export default function Home() {
 
           <div className="grid gap-6 md:grid-cols-3">
             {/* Phase 1 */}
-            <div className="card">
+            <AnimatedCard className="card" delay={0}>
               <span className="badge-green mb-4">Complete</span>
               <h3 className="heading-3 mb-3">Phase 1: PDA Vaults</h3>
               <ul className="space-y-2">
@@ -311,10 +452,10 @@ export default function Home() {
                   </li>
                 ))}
               </ul>
-            </div>
+            </AnimatedCard>
 
             {/* Phase 2 */}
-            <div className="card">
+            <AnimatedCard className="card" delay={0.15}>
               <span className="badge-purple mb-4">In Progress</span>
               <h3 className="heading-3 mb-3">Phase 2: Arcium MPC</h3>
               <ul className="space-y-2">
@@ -325,10 +466,10 @@ export default function Home() {
                   </li>
                 ))}
               </ul>
-            </div>
+            </AnimatedCard>
 
             {/* Phase 3 */}
-            <div className="card">
+            <AnimatedCard className="card" delay={0.3}>
               <span className="badge mb-4">Future</span>
               <h3 className="heading-3 mb-3">Phase 3: Global Vault + ZK</h3>
               <ul className="space-y-2">
@@ -339,7 +480,7 @@ export default function Home() {
                   </li>
                 ))}
               </ul>
-            </div>
+            </AnimatedCard>
           </div>
         </section>
 
@@ -347,22 +488,20 @@ export default function Home() {
         <footer className="border-t border-border-subtle">
           <div className="container-main py-12">
             <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
-              <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sol-purple">
-                  <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                </div>
-                <span className="font-semibold">PrivyLink</span>
+              <div className="flex items-center">
+                <img src="/logo-privylink.png" alt="PrivyLink" className="h-8" />
               </div>
 
               <div className="flex items-center gap-6">
                 <a
-                  href="https://github.com"
+                  href="https://github.com/renner16/privylink"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-muted transition hover:text-foreground"
+                  className="flex items-center gap-2 text-sm text-muted transition hover:text-foreground"
                 >
+                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+                  </svg>
                   GitHub
                 </a>
                 <span className="text-border-subtle">|</span>
