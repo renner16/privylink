@@ -103,9 +103,11 @@ const isInWalletBrowser = () => {
 const getWalletDeepLink = (walletId: string): string | null => {
   if (typeof window === "undefined") return null;
 
+  const appOrigin = window.location.origin;
+
   // Reconstruir URL com parâmetros de claim do sessionStorage (se existirem)
   // Isso é necessário porque a URL é limpa após parse dos parâmetros
-  let targetUrl = window.location.origin + window.location.pathname;
+  let targetUrl = appOrigin + window.location.pathname;
 
   try {
     const savedClaimData = sessionStorage.getItem("privylink_claim_data");
@@ -133,15 +135,17 @@ const getWalletDeepLink = (walletId: string): string | null => {
     targetUrl += window.location.hash;
   }
 
+  // Encode URL e ref para o deep link
   const encodedUrl = encodeURIComponent(targetUrl);
+  const encodedRef = encodeURIComponent(appOrigin);
 
   switch (walletId) {
     case "phantom":
-      // Phantom Universal Link - abre no app se instalado, senão redireciona para store
-      return `https://phantom.app/ul/browse/${encodedUrl}`;
+      // Phantom Universal Link - formato: /ul/browse/<encoded_url>?ref=<encoded_ref>
+      return `https://phantom.app/ul/browse/${encodedUrl}?ref=${encodedRef}`;
     case "solflare":
-      // Solflare Universal Link
-      return `https://solflare.com/ul/v1/browse/${encodedUrl}`;
+      // Solflare Universal Link - formato: /ul/v1/browse/<encoded_url>?ref=<encoded_ref>
+      return `https://solflare.com/ul/v1/browse/${encodedUrl}?ref=${encodedRef}`;
     default:
       return null;
   }
