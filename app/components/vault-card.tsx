@@ -115,7 +115,7 @@ export function VaultCard() {
     fetchBalance();
   }, [walletAddress]);
 
-  // Parse Magic Link and Tab from URL
+  // Parse Magic Link and Tab from URL (with sessionStorage persistence)
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
@@ -124,7 +124,14 @@ export function VaultCard() {
     const secret = params.get("secret");
     const tab = params.get("tab");
 
+    // Check if we have params in URL
     if (depositor && depositId) {
+      // Save to sessionStorage for persistence across wallet connect
+      sessionStorage.setItem("privylink_claim_data", JSON.stringify({
+        depositor,
+        depositId,
+        secret: secret || ""
+      }));
       setClaimDepositor(depositor);
       setClaimDepositId(depositId);
       if (secret) setClaimSecret(secret);
@@ -137,24 +144,46 @@ export function VaultCard() {
           sendSection.scrollIntoView({ behavior: "smooth", block: "start" });
         }
       }, 100);
-    } else if (tab === "claim") {
-      setActiveTab("claim");
-      window.history.replaceState({}, "", window.location.pathname + window.location.hash);
-      setTimeout(() => {
-        const sendSection = document.getElementById("send");
-        if (sendSection) {
-          sendSection.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else {
+      // Check sessionStorage for saved claim data (after wallet connect reload)
+      const savedClaimData = sessionStorage.getItem("privylink_claim_data");
+      if (savedClaimData) {
+        try {
+          const data = JSON.parse(savedClaimData);
+          if (data.depositor && data.depositId) {
+            setClaimDepositor(data.depositor);
+            setClaimDepositId(data.depositId);
+            if (data.secret) setClaimSecret(data.secret);
+            setActiveTab("claim");
+            setTimeout(() => {
+              const sendSection = document.getElementById("send");
+              if (sendSection) {
+                sendSection.scrollIntoView({ behavior: "smooth", block: "start" });
+              }
+            }, 100);
+          }
+        } catch (e) {
+          console.warn("Failed to parse saved claim data:", e);
         }
-      }, 100);
-    } else if (tab === "send") {
-      setActiveTab("create");
-      window.history.replaceState({}, "", window.location.pathname + window.location.hash);
-      setTimeout(() => {
-        const sendSection = document.getElementById("send");
-        if (sendSection) {
-          sendSection.scrollIntoView({ behavior: "smooth", block: "start" });
-        }
-      }, 100);
+      } else if (tab === "claim") {
+        setActiveTab("claim");
+        window.history.replaceState({}, "", window.location.pathname + window.location.hash);
+        setTimeout(() => {
+          const sendSection = document.getElementById("send");
+          if (sendSection) {
+            sendSection.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
+        }, 100);
+      } else if (tab === "send") {
+        setActiveTab("create");
+        window.history.replaceState({}, "", window.location.pathname + window.location.hash);
+        setTimeout(() => {
+          const sendSection = document.getElementById("send");
+          if (sendSection) {
+            sendSection.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
+        }, 100);
+      }
     }
   }, []);
 
@@ -397,6 +426,8 @@ export function VaultCard() {
       const amountStr = claimAmount > 0 ? ` You received ${claimAmount.toFixed(4)} SOL!` : "";
       setTxStatus(`Claim successful!${amountStr}`);
       setTxStatusType("success");
+      // Clear saved claim data from sessionStorage
+      sessionStorage.removeItem("privylink_claim_data");
       setClaimDepositor("");
       setClaimDepositId("");
       setClaimSecret("");
