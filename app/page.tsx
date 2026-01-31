@@ -228,14 +228,22 @@ export default function Home() {
     } else if (isDetectedNow) {
       // Try direct connection (fallback)
       try {
+        // Mostrar mensagem enquanto aguarda aprovação (importante para mobile)
+        const isMobile = isMobileDevice();
+        if (isMobile) {
+          setConnectionError("Aguardando aprovação... Minimize o navegador para ver a solicitação.");
+        }
+
         if (walletOption.id === "solflare" && (window as any).solflare) {
           const solflare = (window as any).solflare;
           await solflare.connect();
+          setConnectionError(null);
           window.location.reload();
           return;
         } else if (walletOption.id === "phantom" && (window as any).phantom?.solana) {
           const phantom = (window as any).phantom.solana;
           await phantom.connect();
+          setConnectionError(null);
           window.location.reload();
           return;
         }
