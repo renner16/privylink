@@ -1,15 +1,19 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { useWalletConnection, useSendTransaction } from "@solana/react-hooks";
 import {
   getProgramDerivedAddress,
   getAddressEncoder,
   getU64Encoder,
   getI64Encoder,
+  getU32Encoder,
   getBytesEncoder,
+  getUtf8Encoder,
   getStructEncoder,
   fixEncoderSize,
+  addEncoderSizePrefix,
   AccountRole,
   type Address,
 } from "@solana/kit";
@@ -17,12 +21,16 @@ import { QRCodeSVG } from "qrcode.react";
 import { VAULT_PROGRAM_ADDRESS } from "../generated/vault";
 import Link from "next/link";
 
-// Instruction discriminator for create_private_deposit
+// Instruction discriminators
 const CREATE_PRIVATE_DEPOSIT_DISCRIMINATOR = new Uint8Array([
   18, 31, 68, 39, 24, 0, 251, 139,
 ]);
+const CLAIM_DEPOSIT_DISCRIMINATOR = new Uint8Array([
+  201, 106, 1, 224, 122, 144, 210, 155,
+]);
 
 const SYSTEM_PROGRAM_ADDRESS = "11111111111111111111111111111111" as Address;
+const DEPOSIT_SEED = new Uint8Array([100, 101, 112, 111, 115, 105, 116]); // "deposit"
 
 const LAMPORTS_PER_SOL = 1_000_000_000n;
 
@@ -42,9 +50,11 @@ function encodeMagicLink(depositId: string, depositorAddress: string, secret: st
 }
 
 export default function SendPage() {
+  const searchParams = useSearchParams();
   const { wallet, status } = useWalletConnection();
   const { send, isSending } = useSendTransaction();
 
+  const [activeTab, setActiveTab] = useState<"send" | "claim">("send");
   const [amount, setAmount] = useState("");
   const [secretCode, setSecretCode] = useState("");
   const [expiresIn, setExpiresIn] = useState(86400); // Default 24 hours
@@ -57,7 +67,20 @@ export default function SendPage() {
     expiresAt: number;
   } | null>(null);
 
+  // Claim state
+  const [claimDepositId, setClaimDepositId] = useState("");
+  const [claimDepositorAddress, setClaimDepositorAddress] = useState("");
+  const [claimSecret, setClaimSecret] = useState("");
+
   const walletAddress = wallet?.account.address;
+
+  // Check URL params for tab
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab === "claim") {
+      setActiveTab("claim");
+    }
+  }, [searchParams]);
 
   // Generate random secret code
   const generateSecret = useCallback(() => {
@@ -90,7 +113,7 @@ export default function SendPage() {
       );
 
       // Validate minimum amount
-      const MIN_RENT = 1_500_000n; // ~0.0015 SOL for 90 bytes
+      const MIN_RENT = 1_500_000n;
       const MIN_AMOUNT = MIN_RENT + 5_000n;
 
       if (depositAmount < MIN_AMOUNT) {
@@ -98,37 +121,19 @@ export default function SendPage() {
         return;
       }
 
-      // Generate deposit_id from timestamp
       const depositId = BigInt(Date.now());
-
-      // Calculate expiration timestamp
       const expiresAt = expiresIn > 0 ? Math.floor(Date.now() / 1000) + expiresIn : 0;
-
-      // Hash the secret code
       const claimHash = await hashSecret(secretCode);
 
-      console.log("Criando deposito:", {
-        depositId: depositId.toString(),
-        amount: depositAmount.toString(),
-        expiresAt,
-        depositor: walletAddress,
-      });
-
-      // Derive the deposit PDA manually
       const depositPda = await getProgramDerivedAddress({
         programAddress: VAULT_PROGRAM_ADDRESS,
         seeds: [
-          getBytesEncoder().encode(
-            new Uint8Array([100, 101, 112, 111, 115, 105, 116]) // "deposit"
-          ),
+          getBytesEncoder().encode(DEPOSIT_SEED),
           getAddressEncoder().encode(walletAddress as Address),
           getU64Encoder().encode(depositId),
         ],
       });
 
-      console.log("Deposit PDA:", depositPda[0]);
-
-      // Build instruction data manually
       const instructionDataEncoder = getStructEncoder([
         ["discriminator", fixEncoderSize(getBytesEncoder(), 8)],
         ["depositId", getU64Encoder()],
@@ -145,7 +150,6 @@ export default function SendPage() {
         expiresAt: BigInt(expiresAt),
       });
 
-      // Build instruction manually without attaching signer objects
       const instruction = {
         programAddress: VAULT_PROGRAM_ADDRESS,
         accounts: [
@@ -158,63 +162,10 @@ export default function SendPage() {
 
       setTxStatus("Aguardando assinatura...");
 
-      const signature = await send({
-        instructions: [instruction],
-      });
+      const signature = await send({ instructions: [instruction] });
 
-      console.log("Transaction signature:", signature);
-      console.log("Deposit PDA expected:", depositPda[0]);
-
-      // Verify the transaction status
-      const RPC_ENDPOINT = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || "https://api.devnet.solana.com";
-
-      // Wait a bit for confirmation
-      await new Promise(resolve => setTimeout(resolve, 3000));
-
-      // Check transaction status
-      const txStatusResponse = await fetch(RPC_ENDPOINT, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          jsonrpc: "2.0",
-          id: 1,
-          method: "getSignatureStatuses",
-          params: [[signature], { searchTransactionHistory: true }]
-        })
-      });
-      const txStatusData = await txStatusResponse.json();
-      console.log("Transaction status:", txStatusData);
-
-      if (txStatusData.result?.value?.[0]?.err) {
-        console.error("Transaction failed:", txStatusData.result.value[0].err);
-        setTxStatus(`Erro: Transacao falhou.\n\nErro: ${JSON.stringify(txStatusData.result.value[0].err)}\n\nSignature: ${signature}\n\nVerifique no explorer: https://explorer.solana.com/tx/${signature}?cluster=devnet`);
-        return;
-      }
-
-      // Check if the deposit account was created
-      const accountResponse = await fetch(RPC_ENDPOINT, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          jsonrpc: "2.0",
-          id: 1,
-          method: "getAccountInfo",
-          params: [depositPda[0], { encoding: "base64" }]
-        })
-      });
-      const accountData = await accountResponse.json();
-      console.log("Deposit account verification:", accountData);
-
-      if (!accountData.result?.value) {
-        console.warn("WARNING: Deposit account not found after transaction!");
-        console.log("Expected PDA:", depositPda[0]);
-        console.log("Wallet address used:", walletAddress);
-        console.log("Deposit ID used:", depositId.toString());
-        setTxStatus(`Aviso: Transacao enviada mas deposito nao confirmado.\n\nPDA esperado: ${depositPda[0]}\nDeposit ID: ${depositId}\n\nSignature: ${signature}\n\nVerifique no explorer: https://explorer.solana.com/tx/${signature}?cluster=devnet`);
-        return;
-      }
-
-      console.log("Deposit confirmed! Lamports:", accountData.result.value.lamports);
+      // Wait for confirmation
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
       // Generate magic link
       const code = encodeMagicLink(depositId.toString(), walletAddress, secretCode);
@@ -229,7 +180,21 @@ export default function SendPage() {
         expiresAt,
       });
 
-      setTxStatus(`Deposito criado com sucesso!\nSignature: ${signature?.slice(0, 20)}...`);
+      // Salvar no localStorage para página de refund
+      if (typeof window !== "undefined") {
+        const stored = JSON.parse(localStorage.getItem("privylink_deposits") || "[]");
+        stored.push({
+          depositId: depositId.toString(),
+          depositor: walletAddress,
+          amount: parseFloat(amount),
+          expiresAt,
+          createdAt: Math.floor(Date.now() / 1000),
+          secret: secretCode, // Para poder copiar magic link depois
+        });
+        localStorage.setItem("privylink_deposits", JSON.stringify(stored));
+      }
+
+      setTxStatus(`Deposito criado!\nSignature: ${signature?.slice(0, 20)}...`);
       setAmount("");
       setSecretCode("");
 
@@ -239,23 +204,93 @@ export default function SendPage() {
     }
   }, [walletAddress, wallet, amount, secretCode, expiresIn, send]);
 
+  const handleClaim = useCallback(async () => {
+    if (!walletAddress || !claimDepositId || !claimSecret || !claimDepositorAddress || !wallet) return;
+
+    try {
+      setTxStatus("Processando claim...");
+
+      const depositId = BigInt(claimDepositId);
+
+      const depositPda = await getProgramDerivedAddress({
+        programAddress: VAULT_PROGRAM_ADDRESS,
+        seeds: [
+          getBytesEncoder().encode(DEPOSIT_SEED),
+          getAddressEncoder().encode(claimDepositorAddress as Address),
+          getU64Encoder().encode(depositId),
+        ],
+      });
+
+      const instructionDataEncoder = getStructEncoder([
+        ["discriminator", fixEncoderSize(getBytesEncoder(), 8)],
+        ["depositId", getU64Encoder()],
+        ["secret", addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
+      ]);
+
+      const instructionData = instructionDataEncoder.encode({
+        discriminator: CLAIM_DEPOSIT_DISCRIMINATOR,
+        depositId,
+        secret: claimSecret,
+      });
+
+      const instruction = {
+        programAddress: VAULT_PROGRAM_ADDRESS,
+        accounts: [
+          { address: walletAddress as Address, role: AccountRole.WRITABLE_SIGNER },
+          { address: depositPda[0], role: AccountRole.WRITABLE },
+          { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
+        ],
+        data: instructionData,
+      };
+
+      setTxStatus("Aguardando assinatura...");
+
+      const signature = await send({ instructions: [instruction] });
+
+      setTxStatus(`Resgatado com sucesso!\n\nOs SOL foram transferidos para sua wallet.\n\nSignature: ${signature?.slice(0, 20)}...`);
+      setClaimDepositId("");
+      setClaimDepositorAddress("");
+      setClaimSecret("");
+
+    } catch (err: any) {
+      console.error("Erro no claim:", err);
+      let errorMessage = err?.message || "Erro desconhecido";
+
+      if (errorMessage.includes("InvalidSecret")) {
+        errorMessage = "Codigo secreto invalido!";
+      } else if (errorMessage.includes("AlreadyClaimed")) {
+        errorMessage = "Este deposito ja foi resgatado!";
+      } else if (errorMessage.includes("DepositExpired")) {
+        errorMessage = "Este deposito expirou.";
+      }
+
+      setTxStatus(`Erro: ${errorMessage}`);
+    }
+  }, [walletAddress, wallet, claimDepositId, claimSecret, claimDepositorAddress, send]);
+
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    setTxStatus("Link copiado!");
+    setTxStatus("Copiado!");
   };
 
   if (status !== "connected") {
     return (
-      <div className="min-h-screen bg-bg1 text-foreground p-6">
-        <div className="max-w-xl mx-auto">
-          <Link href="/" className="text-sm text-muted hover:underline mb-4 inline-block">
-            &larr; Voltar
+      <div className="min-h-screen bg-background">
+        <div className="fixed inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-sol-purple/15 rounded-full blur-[120px]" />
+        </div>
+
+        <div className="relative z-10 max-w-xl mx-auto px-6 py-12">
+          <Link href="/" className="btn-ghost inline-flex items-center gap-2 mb-8">
+            ← Voltar
           </Link>
-          <div className="rounded-2xl border border-border-low bg-card p-6 shadow-lg">
-            <h1 className="text-2xl font-bold mb-4">Enviar SOL Privado</h1>
-            <p className="text-muted mb-4">Conecte sua wallet para criar um deposito privado.</p>
-            <div className="rounded-lg bg-yellow-100/50 border border-yellow-300/50 p-4 text-sm">
-              <p className="font-semibold text-yellow-800">Configure sua wallet para DEVNET</p>
+
+          <div className="glass-card p-8">
+            <h1 className="text-2xl font-bold mb-4 text-gradient">PrivyLink</h1>
+            <p className="text-muted mb-6">Conecte sua wallet para continuar.</p>
+
+            <div className="card-section border-sol-purple/30 bg-sol-purple/5">
+              <p className="text-sm text-sol-purple font-medium">⚠️ Configure sua wallet para DEVNET</p>
             </div>
           </div>
         </div>
@@ -264,165 +299,259 @@ export default function SendPage() {
   }
 
   return (
-    <div className="min-h-screen bg-bg1 text-foreground p-6">
-      <div className="max-w-xl mx-auto space-y-6">
-        <Link href="/" className="text-sm text-muted hover:underline mb-4 inline-block">
-          &larr; Voltar
+    <div className="min-h-screen bg-background">
+      {/* Background glow */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-sol-purple/15 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-sol-green/10 rounded-full blur-[100px]" />
+      </div>
+
+      <div className="relative z-10 max-w-xl mx-auto px-6 py-12 space-y-6">
+        <Link href="/" className="btn-ghost inline-flex items-center gap-2">
+          ← Voltar
         </Link>
 
-        <div className="rounded-2xl border border-border-low bg-card p-6 shadow-lg">
-          <h1 className="text-2xl font-bold mb-2">Enviar SOL Privado</h1>
-          <p className="text-sm text-muted mb-6">
-            Crie um deposito que so pode ser resgatado com o codigo secreto.
-          </p>
+        <div className="glass-card overflow-hidden">
+          {/* Tabs */}
+          <div className="flex border-b border-border">
+            <button
+              onClick={() => { setActiveTab("send"); setTxStatus(null); }}
+              className={`flex-1 px-6 py-4 text-sm font-semibold transition-colors ${
+                activeTab === "send"
+                  ? "text-sol-purple border-b-2 border-sol-purple bg-sol-purple/5"
+                  : "text-muted hover:text-foreground"
+              }`}
+            >
+              📤 Enviar
+            </button>
+            <button
+              onClick={() => { setActiveTab("claim"); setTxStatus(null); }}
+              className={`flex-1 px-6 py-4 text-sm font-semibold transition-colors ${
+                activeTab === "claim"
+                  ? "text-sol-green border-b-2 border-sol-green bg-sol-green/5"
+                  : "text-muted hover:text-foreground"
+              }`}
+            >
+              📥 Resgatar
+            </button>
+          </div>
 
-          {!magicLink ? (
-            <div className="space-y-4">
-              {/* Amount */}
-              <div>
-                <label className="block text-sm font-medium mb-1">Valor (SOL)</label>
-                <input
-                  type="number"
-                  min="0.01"
-                  step="0.01"
-                  placeholder="0.1"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  disabled={isSending}
-                  className="w-full rounded-lg border border-border-low bg-card px-4 py-3 text-lg outline-none transition focus:border-foreground/30 disabled:opacity-60"
-                />
-              </div>
+          <div className="p-6">
+            {activeTab === "send" && !magicLink && (
+              <div className="space-y-5">
+                <div>
+                  <h2 className="text-xl font-bold mb-1">Criar Deposito</h2>
+                  <p className="text-sm text-muted">
+                    Envie SOL que so pode ser resgatado com o codigo secreto.
+                  </p>
+                </div>
 
-              {/* Secret Code */}
-              <div>
-                <label className="block text-sm font-medium mb-1">Codigo Secreto</label>
-                <div className="flex gap-2">
+                {/* Amount */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">Valor (SOL)</label>
                   <input
-                    type="text"
-                    placeholder="Digite ou gere um codigo"
-                    value={secretCode}
-                    onChange={(e) => setSecretCode(e.target.value)}
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    placeholder="0.1"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
                     disabled={isSending}
-                    className="flex-1 rounded-lg border border-border-low bg-card px-4 py-3 outline-none transition focus:border-foreground/30 disabled:opacity-60"
+                    className="input text-lg"
                   />
-                  <button
-                    onClick={generateSecret}
-                    disabled={isSending}
-                    className="px-4 py-3 rounded-lg border border-border-low bg-cream hover:bg-cream/80 transition font-medium"
-                  >
-                    Gerar
-                  </button>
                 </div>
-              </div>
 
-              {/* Expiration */}
-              <div>
-                <label className="block text-sm font-medium mb-1">Expiracao</label>
-                <select
-                  value={expiresIn}
-                  onChange={(e) => setExpiresIn(Number(e.target.value))}
-                  disabled={isSending}
-                  className="w-full rounded-lg border border-border-low bg-card px-4 py-3 outline-none transition focus:border-foreground/30 disabled:opacity-60"
-                >
-                  {EXPIRATION_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-                <p className="text-xs text-muted mt-1">
-                  Apos expirar, voce pode recuperar os fundos.
-                </p>
-              </div>
-
-              {/* Submit Button */}
-              <button
-                onClick={handleCreateDeposit}
-                disabled={isSending || !amount || !secretCode || parseFloat(amount) <= 0}
-                className="w-full rounded-lg bg-foreground px-4 py-3 text-lg font-medium text-background transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                {isSending ? "Criando..." : "Criar Deposito"}
-              </button>
-            </div>
-          ) : (
-            /* Success - Show Magic Link and QR Code */
-            <div className="space-y-6">
-              <div className="text-center">
-                <div className="inline-block p-4 bg-white rounded-xl shadow-sm">
-                  <QRCodeSVG value={magicLink} size={200} />
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <label className="block text-sm font-medium">Magic Link</label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={magicLink}
-                    readOnly
-                    className="flex-1 rounded-lg border border-border-low bg-cream/50 px-3 py-2 text-sm font-mono"
-                  />
-                  <button
-                    onClick={() => copyToClipboard(magicLink)}
-                    className="px-4 py-2 rounded-lg bg-foreground text-background font-medium hover:opacity-90"
-                  >
-                    Copiar
-                  </button>
-                </div>
-              </div>
-
-              {depositInfo && (
-                <div className="rounded-lg bg-green-50 border border-green-200 p-4 space-y-2">
-                  <p className="font-semibold text-green-800">Deposito Criado!</p>
-                  <div className="text-xs text-green-700 space-y-1">
-                    <p><span className="font-medium">ID:</span> {depositInfo.depositId}</p>
-                    <p><span className="font-medium">Codigo:</span> {depositInfo.secret}</p>
-                    {depositInfo.expiresAt > 0 && (
-                      <p>
-                        <span className="font-medium">Expira:</span>{" "}
-                        {new Date(depositInfo.expiresAt * 1000).toLocaleString()}
-                      </p>
-                    )}
+                {/* Secret Code */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">Codigo Secreto</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Digite ou gere um codigo"
+                      value={secretCode}
+                      onChange={(e) => setSecretCode(e.target.value)}
+                      disabled={isSending}
+                      className="input flex-1"
+                    />
+                    <button
+                      onClick={generateSecret}
+                      disabled={isSending}
+                      className="btn-secondary whitespace-nowrap"
+                    >
+                      Gerar
+                    </button>
                   </div>
                 </div>
-              )}
 
-              <div className="flex gap-3">
+                {/* Expiration */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">Expiracao</label>
+                  <select
+                    value={expiresIn}
+                    onChange={(e) => setExpiresIn(Number(e.target.value))}
+                    disabled={isSending}
+                    className="input"
+                  >
+                    {EXPIRATION_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-muted mt-2">
+                    Apos expirar, voce pode recuperar os fundos na pagina Recuperar.
+                  </p>
+                </div>
+
+                {/* Submit Button */}
+                <button
+                  onClick={handleCreateDeposit}
+                  disabled={isSending || !amount || !secretCode || parseFloat(amount) <= 0}
+                  className="btn-primary w-full"
+                >
+                  {isSending ? "Criando..." : "Criar Deposito"}
+                </button>
+              </div>
+            )}
+
+            {activeTab === "send" && magicLink && (
+              /* Success - Show Magic Link and QR Code */
+              <div className="space-y-6">
+                <div className="text-center">
+                  <div className="inline-block p-4 bg-white rounded-xl">
+                    <QRCodeSVG value={magicLink} size={180} />
+                  </div>
+                  <p className="text-sm text-muted mt-3">Escaneie para resgatar</p>
+                </div>
+
+                <div className="space-y-3">
+                  <label className="block text-sm font-medium">Magic Link</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={magicLink}
+                      readOnly
+                      className="input flex-1 text-xs font-mono"
+                    />
+                    <button
+                      onClick={() => copyToClipboard(magicLink)}
+                      className="btn-primary whitespace-nowrap"
+                    >
+                      Copiar
+                    </button>
+                  </div>
+                </div>
+
+                {depositInfo && (
+                  <div className="card-section border-sol-green/30 bg-sol-green/5 space-y-2">
+                    <p className="font-semibold text-sol-green">Deposito Criado!</p>
+                    <div className="text-sm text-muted space-y-1">
+                      <p><span className="font-medium text-foreground">ID:</span> {depositInfo.depositId}</p>
+                      <p><span className="font-medium text-foreground">Codigo:</span> <span className="font-mono text-sol-purple">{depositInfo.secret}</span></p>
+                      {depositInfo.expiresAt > 0 && (
+                        <p>
+                          <span className="font-medium text-foreground">Expira:</span>{" "}
+                          {new Date(depositInfo.expiresAt * 1000).toLocaleString()}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 <button
                   onClick={() => {
                     setMagicLink(null);
                     setDepositInfo(null);
                     setTxStatus(null);
                   }}
-                  className="flex-1 rounded-lg border border-border-low px-4 py-3 font-medium hover:bg-cream/50 transition"
+                  className="btn-secondary w-full"
                 >
-                  Criar Novo
+                  Criar Novo Deposito
                 </button>
-                <Link
-                  href={`/claim/${encodeMagicLink(depositInfo!.depositId, depositInfo!.depositorAddress, depositInfo!.secret)}`}
-                  className="flex-1 rounded-lg bg-cream px-4 py-3 font-medium text-center hover:bg-cream/80 transition"
-                >
-                  Testar Claim
-                </Link>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Status */}
-          {txStatus && !magicLink && (
-            <div className="mt-4 rounded-lg border border-border-low bg-cream/50 px-4 py-3 text-sm whitespace-pre-line">
-              {txStatus}
-            </div>
-          )}
+            {activeTab === "claim" && (
+              <div className="space-y-5">
+                <div>
+                  <h2 className="text-xl font-bold mb-1">Resgatar Deposito</h2>
+                  <p className="text-sm text-muted">
+                    Digite as informacoes do deposito para resgatar os SOL.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">Deposit ID</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: 1706456789000"
+                    value={claimDepositId}
+                    onChange={(e) => setClaimDepositId(e.target.value)}
+                    disabled={isSending}
+                    className="input"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">Endereco do Depositante</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: 7xKX..."
+                    value={claimDepositorAddress}
+                    onChange={(e) => setClaimDepositorAddress(e.target.value)}
+                    disabled={isSending}
+                    className="input font-mono text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">Codigo Secreto</label>
+                  <input
+                    type="text"
+                    placeholder="O codigo que voce recebeu"
+                    value={claimSecret}
+                    onChange={(e) => setClaimSecret(e.target.value)}
+                    disabled={isSending}
+                    className="input"
+                  />
+                </div>
+
+                <button
+                  onClick={handleClaim}
+                  disabled={isSending || !claimDepositId || !claimSecret || !claimDepositorAddress}
+                  className="btn-primary w-full"
+                >
+                  {isSending ? "Processando..." : "Resgatar SOL"}
+                </button>
+
+                <p className="text-xs text-muted text-center">
+                  Recebeu um Magic Link? Basta abrir o link diretamente.
+                </p>
+              </div>
+            )}
+
+            {/* Status */}
+            {txStatus && (
+              <div className={`mt-6 card-section text-sm whitespace-pre-line ${
+                txStatus.includes("sucesso") || txStatus.includes("Criado")
+                  ? "border-sol-green/30 bg-sol-green/5 text-sol-green"
+                  : txStatus.includes("Erro")
+                  ? "border-red-500/30 bg-red-500/5 text-red-400"
+                  : "border-border text-muted"
+              }`}>
+                {txStatus}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Info Card */}
-        <div className="rounded-xl border border-border-low bg-card p-4 text-sm text-muted">
-          <p className="font-medium text-foreground mb-2">Como funciona:</p>
-          <ol className="list-decimal list-inside space-y-1">
+        <div className="glass-card p-6 text-sm text-muted">
+          <p className="font-medium text-foreground mb-3">Como funciona:</p>
+          <ol className="list-decimal list-inside space-y-2">
             <li>Voce cria um deposito com um codigo secreto</li>
-            <li>Compartilha o link ou QR code com o destinatario</li>
-            <li>O destinatario usa o link para resgatar os SOL</li>
+            <li>Compartilha o Magic Link ou QR code</li>
+            <li>O destinatario usa o link para resgatar</li>
             <li>Se nao for resgatado, voce recupera apos expirar</li>
           </ol>
         </div>

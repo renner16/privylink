@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Solana dApp Starter",
-  description: "A minimal Next.js starter powered by @solana/react-hooks",
+  title: "PrivyLink - Transferencias Privadas de SOL",
+  description: "Envie SOL com codigos secretos. So quem tem o codigo pode resgatar.",
   icons: {
     icon: "/icon.svg",
     shortcut: "/icon.svg",
@@ -30,7 +30,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="pt-BR" className="dark">
       <Providers>
         <body
           suppressHydrationWarning
