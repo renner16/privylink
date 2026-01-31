@@ -132,38 +132,65 @@ export default function Home() {
     setDetectedWallets(detected);
   }, []);
 
-  // Helper to connect wallet - prioritizes direct connection for reliability
+  // Helper to connect wallet with retry logic
   const handleWalletClick = async (walletOption: typeof WALLET_OPTIONS[0]) => {
     setConnectionError(null);
 
-    // Real-time detection (more reliable than connectors which load slowly)
+    // Helper function to attempt direct connection
+    const tryDirectConnect = async (): Promise<boolean> => {
+      if (walletOption.id === "solflare" && (window as any).solflare) {
+        const solflare = (window as any).solflare;
+        await solflare.connect();
+        return true;
+      } else if (walletOption.id === "phantom" && (window as any).phantom?.solana) {
+        const phantom = (window as any).phantom.solana;
+        await phantom.connect();
+        return true;
+      }
+      return false;
+    };
+
+    // Helper to wait
+    const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+    // Real-time detection
     const isDetectedNow = walletOption.detectGlobal();
 
-    // Try direct connection first (more reliable, works immediately)
+    // Try direct connection with retries (wallet may need time to initialize)
     if (isDetectedNow) {
-      try {
-        if (walletOption.id === "solflare" && (window as any).solflare) {
-          const solflare = (window as any).solflare;
-          await solflare.connect();
-          window.location.reload();
-          return;
-        } else if (walletOption.id === "phantom" && (window as any).phantom?.solana) {
-          const phantom = (window as any).phantom.solana;
-          await phantom.connect();
-          window.location.reload();
-          return;
+      const maxRetries = 3;
+      const retryDelays = [0, 150, 300];
+
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        if (attempt > 0) {
+          await wait(retryDelays[attempt]);
         }
-      } catch (err: any) {
-        console.error("Direct wallet connection failed:", err);
-        const errorMsg = err?.message?.toLowerCase() || "";
-        if (errorMsg.includes("already pending") || errorMsg.includes("resource") || errorMsg.includes("busy") || errorMsg.includes("locked") || errorMsg.includes("already processing")) {
-          setConnectionError("Outra página está usando a carteira. Feche-a para continuar.");
-          return;
-        } else if (errorMsg.includes("rejected") || errorMsg.includes("denied") || errorMsg.includes("cancelled")) {
-          setConnectionError("Conexão rejeitada pelo usuário.");
-          return;
+
+        try {
+          const connected = await tryDirectConnect();
+          if (connected) {
+            window.location.reload();
+            return;
+          }
+        } catch (err: any) {
+          console.error(`Direct wallet connection attempt ${attempt + 1} failed:`, err);
+          const errorMsg = err?.message?.toLowerCase() || "";
+
+          // These errors should not retry
+          if (errorMsg.includes("already pending") || errorMsg.includes("resource") || errorMsg.includes("busy") || errorMsg.includes("locked") || errorMsg.includes("already processing")) {
+            setConnectionError("Outra página está usando a carteira. Feche-a para continuar.");
+            return;
+          } else if (errorMsg.includes("rejected") || errorMsg.includes("denied") || errorMsg.includes("cancelled")) {
+            setConnectionError("Conexão rejeitada pelo usuário.");
+            return;
+          }
+
+          // For other errors, continue to next retry
+          if (attempt === maxRetries - 1) {
+            // Last attempt failed, try connector fallback
+            break;
+          }
         }
-        // If direct connection failed for other reasons, try via connector
       }
     }
 
