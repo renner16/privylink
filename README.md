@@ -16,6 +16,16 @@ PrivyLink enables private SOL transfers without creating a direct on-chain link 
 
 **Live Demo:** [privylink.vercel.app](https://privylink.vercel.app/)
 
+### TL;DR (60 seconds)
+
+- **Send SOL** → get a magic link + secret code
+- **Share** link + secret with receiver
+- **Receiver claims** by proving knowledge of secret
+- **No sender ↔ receiver link on-chain**
+- **Manual refund** available if deposit expires unclaimed
+
+> **Not ZK, not fully anonymous — intentionally.** We prioritize simplicity and UX over complex cryptography. Relationship privacy without the overhead.
+
 ---
 
 ## How It Works
@@ -43,7 +53,7 @@ Send the magic link to the receiver via any channel.
 Receiver opens the link, enters the secret code, and claims the SOL.
 
 ### Step 4: Expiration (Optional)
-If unclaimed, sender can refund after expiration (1 hour to 30 days).
+If unclaimed, sender can manually refund after expiration (1 hour to 30 days).
 
 ---
 
@@ -54,7 +64,7 @@ If unclaimed, sender can refund after expiration (1 hour to 30 days).
 - **Magic Links** - Share via URL or QR Code
 - **Secret Codes** - Receiver proves knowledge to claim
 - **Configurable Expiration** - 1 hour to 30 days
-- **Auto-Refund** - Recover unclaimed funds after expiration
+- **Manual Refund** - Sender can recover expired deposits on demand
 
 ### UX Features
 - **Wallet Balance Display** - See your balance before sending
@@ -80,8 +90,8 @@ If unclaimed, sender can refund after expiration (1 hour to 30 days).
 | Layer | Technology |
 |-------|------------|
 | Smart Contract | Solana (Anchor Framework) |
-| Frontend | Next.js 16 + TypeScript |
-| Styling | Tailwind CSS v4 |
+| Frontend | Next.js + TypeScript |
+| Styling | Tailwind CSS |
 | RPC Provider | [Helius](https://www.helius.dev/) |
 | Deployment | Vercel |
 | Network | Devnet |
@@ -98,7 +108,7 @@ If unclaimed, sender can refund after expiration (1 hour to 30 days).
 |----------|------------|-------------|
 | `create_private_deposit` | amount, claim_hash, expiration_hours | Creates deposit with expiration |
 | `claim_deposit` | deposit_id, secret | Claims with secret code |
-| `refund_expired` | deposit_id | Refunds after expiration |
+| `refund_expired` | deposit_id | Manual refund after expiration |
 
 ### Account Structure
 
@@ -129,7 +139,7 @@ pub struct PrivateDeposit {
 
 ## Privacy Model
 
-PrivyLink provides **transactional privacy** through intermediary vaults:
+PrivyLink provides **relationship privacy** through intermediary vaults:
 
 1. **Sender → Vault**: Sender deposits to a PDA (not receiver's wallet)
 2. **Vault → Receiver**: Receiver claims by proving secret knowledge
@@ -144,6 +154,8 @@ PrivyLink provides **transactional privacy** through intermediary vaults:
 - Vault addresses
 - Claim transactions
 
+> **Note:** Vault PDAs are derived from depositor + unique ID. They are not publicly indexable by sender-receiver relationship, as the receiver is never stored on-chain.
+
 ---
 
 ## Why PrivyLink?
@@ -153,7 +165,7 @@ PrivyLink provides **transactional privacy** through intermediary vaults:
 | Setup complexity | Simple | Complex ZK circuits |
 | User experience | Magic links + QR | Wallet-to-wallet |
 | Gas costs | Low (single tx) | High (ZK verification) |
-| Privacy level | Transactional | Full anonymity |
+| Privacy level | Relationship privacy | Full anonymity |
 | Time to integrate | Minutes | Days/weeks |
 
 **Our approach:** Hash-based verification with SHA-256. No complex ZK proofs, no trusted setup, no heavy cryptography. Simple, auditable, and effective for everyday private transfers.
@@ -169,7 +181,7 @@ PrivyLink provides **transactional privacy** through intermediary vaults:
 - [x] Magic links with QR codes
 - [x] QR code download as PNG
 - [x] Configurable expiration (1h to 30 days)
-- [x] Auto-refund for expired deposits
+- [x] Manual refund for expired deposits
 - [x] My Transfers dashboard (Deposits + Claims)
 - [x] Wallet balance display and validation
 - [x] Secret strength indicator
