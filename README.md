@@ -2,9 +2,7 @@
 
 **Private SOL transfers via Magic Links on Solana**
 
-[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://privylink.vercel.app/)
-[![Solana](https://img.shields.io/badge/Solana-Devnet-blueviolet)](https://explorer.solana.com/address/98WwJxc1aAeqGWuaouQntJYmdQEnELntf9BqKXD3o34W?cluster=devnet)
-[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[Live Demo](https://privylink.vercel.app/) · [Solana Devnet](https://explorer.solana.com/address/98WwJxc1aAeqGWuaouQntJYmdQEnELntf9BqKXD3o34W?cluster=devnet) · [MIT License](LICENSE)
 
 > Built for **Solana Privacy Hack 2026**
 
@@ -102,7 +100,7 @@ If unclaimed, sender can manually refund after expiration (1 hour to 30 days).
 
 **Program ID:** [`98WwJxc1aAeqGWuaouQntJYmdQEnELntf9BqKXD3o34W`](https://explorer.solana.com/address/98WwJxc1aAeqGWuaouQntJYmdQEnELntf9BqKXD3o34W?cluster=devnet)
 
-### Instructions
+### Program Interface
 
 | Function | Parameters | Description |
 |----------|------------|-------------|
