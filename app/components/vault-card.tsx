@@ -545,11 +545,11 @@ export function VaultCard() {
       let msg = err?.message || "Unknown error";
       const msgLower = msg.toLowerCase();
 
-      if (msg.includes("InvalidSecret") || msg.includes("#6001")) {
+      if (msg.includes("InvalidSecret") || msg.includes("#6001") || msg.includes("6001")) {
         msg = "Invalid secret code. Please check and try again.";
-      } else if (msg.includes("AlreadyClaimed") || msg.includes("#6000")) {
-        msg = "This deposit has already been claimed or refunded. The funds are no longer available.";
-      } else if (msg.includes("DepositExpired") || msg.includes("#6003")) {
+      } else if (msg.includes("AlreadyClaimed") || msg.includes("#6000") || msg.includes("6000") || msg.includes("7618003") || msg.includes("already been claimed")) {
+        msg = "This deposit has already been claimed or refunded.";
+      } else if (msg.includes("DepositExpired") || msg.includes("#6003") || msg.includes("6003")) {
         msg = "This deposit has expired. The sender can now refund it.";
       } else if (
         msgLower.includes("insufficient") ||
