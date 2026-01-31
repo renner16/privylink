@@ -399,8 +399,33 @@ export function VaultCard() {
     if (!walletAddress || !claimDepositId || !claimSecret || !claimDepositor || !wallet) return;
 
     try {
-      setTxStatus("Building claim transaction...");
+      setTxStatus("Verificando saldo...");
       setTxStatusType("info");
+
+      // Verificar saldo ANTES de tentar a transação
+      const RPC = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || "https://api.devnet.solana.com";
+      try {
+        const balanceRes = await fetch(RPC, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getBalance", params: [walletAddress] })
+        });
+        const balanceData = await balanceRes.json();
+        const balanceLamports = balanceData.result?.value || 0;
+        const balanceSOL = balanceLamports / 1e9;
+
+        // Precisa de pelo menos 0.001 SOL para pagar taxa de rede
+        if (balanceSOL < 0.001) {
+          setTxStatus(`Saldo insuficiente para pagar taxa de rede. Seu saldo: ${balanceSOL.toFixed(6)} SOL. Mínimo necessário: ~0.001 SOL.`);
+          setTxStatusType("error");
+          return;
+        }
+      } catch (balanceErr) {
+        console.warn("Failed to check balance:", balanceErr);
+        // Continua mesmo se falhar a verificação de saldo
+      }
+
+      setTxStatus("Building claim transaction...");
 
       const depositId = BigInt(claimDepositId);
       const depositorAddress = claimDepositor as Address;
