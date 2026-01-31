@@ -132,16 +132,45 @@ export default function Home() {
     setDetectedWallets(detected);
   }, []);
 
-  // Helper to find connector or fallback to download
+  // Helper to connect wallet - prioritizes direct connection for reliability
   const handleWalletClick = async (walletOption: typeof WALLET_OPTIONS[0]) => {
     setConnectionError(null);
 
+    // Real-time detection (more reliable than connectors which load slowly)
+    const isDetectedNow = walletOption.detectGlobal();
+
+    // Try direct connection first (more reliable, works immediately)
+    if (isDetectedNow) {
+      try {
+        if (walletOption.id === "solflare" && (window as any).solflare) {
+          const solflare = (window as any).solflare;
+          await solflare.connect();
+          window.location.reload();
+          return;
+        } else if (walletOption.id === "phantom" && (window as any).phantom?.solana) {
+          const phantom = (window as any).phantom.solana;
+          await phantom.connect();
+          window.location.reload();
+          return;
+        }
+      } catch (err: any) {
+        console.error("Direct wallet connection failed:", err);
+        const errorMsg = err?.message?.toLowerCase() || "";
+        if (errorMsg.includes("already pending") || errorMsg.includes("resource") || errorMsg.includes("busy") || errorMsg.includes("locked") || errorMsg.includes("already processing")) {
+          setConnectionError("Outra página está usando a carteira. Feche-a para continuar.");
+          return;
+        } else if (errorMsg.includes("rejected") || errorMsg.includes("denied") || errorMsg.includes("cancelled")) {
+          setConnectionError("Conexão rejeitada pelo usuário.");
+          return;
+        }
+        // If direct connection failed for other reasons, try via connector
+      }
+    }
+
+    // Fallback to connector if available
     const connector = connectors.find(
       (c) => c.name.toLowerCase().includes(walletOption.id)
     );
-
-    // Real-time detection (more reliable than state)
-    const isDetectedNow = walletOption.detectGlobal();
 
     if (connector) {
       try {
@@ -157,35 +186,11 @@ export default function Home() {
           setConnectionError("Erro ao conectar. Tente novamente.");
         }
       }
-    } else if (isDetectedNow) {
-      // Extension detected via window global - try to connect directly
-      try {
-        if (walletOption.id === "solflare" && (window as any).solflare) {
-          const solflare = (window as any).solflare;
-          await solflare.connect();
-          // Reload page to let the provider detect the connected wallet
-          window.location.reload();
-        } else if (walletOption.id === "phantom" && (window as any).phantom?.solana) {
-          const phantom = (window as any).phantom.solana;
-          await phantom.connect();
-          window.location.reload();
-        } else {
-          setShowNetworkWarning(true);
-        }
-      } catch (err: any) {
-        console.error("Direct wallet connection failed:", err);
-        const errorMsg = err?.message?.toLowerCase() || "";
-        if (errorMsg.includes("already pending") || errorMsg.includes("resource") || errorMsg.includes("busy") || errorMsg.includes("locked") || errorMsg.includes("already processing")) {
-          setConnectionError("Outra página está usando a carteira. Feche-a para continuar.");
-        } else if (errorMsg.includes("rejected") || errorMsg.includes("denied") || errorMsg.includes("cancelled")) {
-          setConnectionError("Conexão rejeitada pelo usuário.");
-        } else {
-          setShowNetworkWarning(true);
-        }
-      }
-    } else {
+    } else if (!isDetectedNow) {
       // Wallet not installed - open download page
       window.open(walletOption.downloadUrl, "_blank");
+    } else {
+      setShowNetworkWarning(true);
     }
   };
 
