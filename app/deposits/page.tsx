@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, Suspense } from "react";
+import { useState, useEffect, useCallback, Suspense, useRef } from "react";
 import { useWalletConnection, useSendTransaction } from "@solana/react-hooks";
 import { AccountRole, type Address, getProgramDerivedAddress, getAddressEncoder } from "@solana/kit";
 import { VAULT_PROGRAM_ADDRESS } from "../generated/vault";
@@ -83,6 +83,29 @@ function DepositsContent() {
   const [activeTab, setActiveTab] = useState<"all" | "active" | "expired" | "completed">(initialTab);
   const [refundingId, setRefundingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Header hide/show on scroll
+  const [headerVisible, setHeaderVisible] = useState(true);
+  const lastScrollY = useRef(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      if (currentScrollY < 100) {
+        setHeaderVisible(true);
+      } else if (currentScrollY > lastScrollY.current) {
+        setHeaderVisible(false);
+      } else {
+        setHeaderVisible(true);
+      }
+
+      lastScrollY.current = currentScrollY;
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
   const [success, setSuccess] = useState<string | null>(null);
 
   const walletAddress = wallet?.account.address;
@@ -334,7 +357,7 @@ function DepositsContent() {
           />
         </div>
 
-        <header className="fixed top-0 left-0 right-0 z-50 border-b border-border-subtle bg-bg-primary/80 backdrop-blur-xl">
+        <header className={`fixed top-0 left-0 right-0 z-50 border-b border-border-subtle bg-bg-primary/80 backdrop-blur-xl transition-transform duration-300 ${headerVisible ? 'translate-y-0' : '-translate-y-full'}`}>
           <div className="container-main flex h-16 items-center justify-between">
             <Link href="/" className="flex items-center">
               <img src="/logo-privylink.png" alt="PrivyLink" className="h-8" />
@@ -384,7 +407,7 @@ function DepositsContent() {
         />
       </div>
 
-      <header className="fixed top-0 left-0 right-0 z-50 border-b border-border-subtle bg-bg-primary/80 backdrop-blur-xl">
+      <header className={`fixed top-0 left-0 right-0 z-50 border-b border-border-subtle bg-bg-primary/80 backdrop-blur-xl transition-transform duration-300 ${headerVisible ? 'translate-y-0' : '-translate-y-full'}`}>
         <div className="container-main flex h-16 items-center justify-between">
           <Link href="/" className="flex items-center">
             <img src="/logo-privylink.png" alt="PrivyLink" className="h-8" />
