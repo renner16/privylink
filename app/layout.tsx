@@ -34,9 +34,9 @@ export const metadata: Metadata = {
     creator: "@_renner_araujo",
   },
   icons: {
-    icon: "/logo-privylink.png",
-    shortcut: "/logo-privylink.png",
-    apple: "/logo-privylink.png",
+    icon: "/logo.png",
+    shortcut: "/logo.png",
+    apple: "/logo.png",
   },
   robots: {
     index: true,
