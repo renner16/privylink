@@ -476,9 +476,7 @@ export default function Home() {
                         return (
                           <button
                             key={walletOption.id}
-                            onClick={async () => {
-                              await handleWalletClick(walletOption);
-                            }}
+                            onClick={() => handleWalletClick(walletOption)}
                             disabled={status === "connecting"}
                             className={`${index === 0 ? 'btn-primary' : 'btn-secondary'} gap-2 py-2.5`}
                           >
