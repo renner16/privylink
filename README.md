@@ -206,7 +206,9 @@ Competing for:
 ## Authors
 
 - **Renner Oliveira**
+
   GitHub: https://github.com/renner16
+  
   X: https://x.com/_renner_araujo
 
 - **Giovana Marques**
