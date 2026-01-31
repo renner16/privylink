@@ -57,26 +57,26 @@ Sender ──▶ Vault PDA ──▶ Receiver
 ## Screenshots
 
 ### Landing Page (Desktop)
-![Landing Hero](screenshots/hero-desktop.png)
+![Landing Hero](public/screenshots/hero-desktop.png)
 
 ### Create Deposit (Desktop)
-![Send Form](screenshots/send-form-desktop.png)
+![Send Form](public/screenshots/send-form-desktop.png)
 
 ### Deposit Success (Desktop)
-![Send Success](screenshots/send-success-desktop.png)
+![Send Success](public/screenshots/send-success-desktop.png)
 
 ### Claim Transfer
 **Desktop**
-![Claim Desktop](screenshots/claim-desktop.png)
+![Claim Desktop](public/screenshots/claim-desktop.png)
 
 **Mobile**
-![Claim Mobile](screenshots/claim-mobile.png)
+![Claim Mobile](public/screenshots/claim-mobile.png)
 
 ### Create Deposit (Mobile)
-![Send Mobile](screenshots/send-mobile.png)
+![Send Mobile](public/screenshots/send-mobile.png)
 
 ### Dashboard — My Transfers
-![Dashboard](screenshots/dashboard-desktop.png)
+![Dashboard](public/screenshots/dashboard-desktop.png)
 
 ---
 
