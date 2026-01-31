@@ -144,12 +144,9 @@ export default function Home() {
     // Real-time detection
     const isDetectedNow = walletOption.detectGlobal();
 
-    console.log(`[PrivyLink] Wallet click: ${walletOption.id}, connector: ${!!connector}, detected: ${isDetectedNow}`);
-
     if (connector) {
-      // Use library connector
+      // Use library connector (preferred method)
       try {
-        console.log(`[PrivyLink] Using connector: ${connector.id}`);
         await connect(connector.id);
       } catch (err: any) {
         console.error("Wallet connection failed:", err);
@@ -163,9 +160,8 @@ export default function Home() {
         }
       }
     } else if (isDetectedNow) {
-      // Try direct connection
+      // Try direct connection (fallback)
       try {
-        console.log(`[PrivyLink] Using direct connection for ${walletOption.id}`);
         if (walletOption.id === "solflare" && (window as any).solflare) {
           const solflare = (window as any).solflare;
           await solflare.connect();
@@ -190,7 +186,6 @@ export default function Home() {
       }
     } else {
       // Wallet not installed - open download page
-      console.log(`[PrivyLink] Wallet not detected, opening download page`);
       window.open(walletOption.downloadUrl, "_blank");
     }
   };
