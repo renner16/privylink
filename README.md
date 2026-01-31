@@ -33,7 +33,7 @@ PrivyLink enables private SOL transfers without creating a direct on-chain link 
 Sender deposits SOL and receives:
 - **Magic Link** (URL with deposit parameters)
 - **Secret Code** (required to claim)
-- **QR Code** for easy sharing
+- **QR Code** (scannable, expandable, downloadable)
 
 ### Step 2: Share
 Send the magic link to the receiver via any channel.
@@ -49,12 +49,29 @@ If unclaimed, sender can refund after expiration (1 hour to 30 days).
 
 ## Features
 
+### Core Features
 - **Private Transfers** - No direct wallet-to-wallet link on-chain
 - **Magic Links** - Share via URL or QR Code
 - **Secret Codes** - Receiver proves knowledge to claim
 - **Configurable Expiration** - 1 hour to 30 days
 - **Auto-Refund** - Recover unclaimed funds after expiration
-- **0.25% Platform Fee** - Coming soon
+
+### UX Features
+- **Wallet Balance Display** - See your balance before sending
+- **Balance Validation** - Prevents insufficient balance errors
+- **Secret Strength Indicator** - Visual feedback (Weak/Medium/Strong)
+- **QR Code Modal** - Enlarge and download as PNG
+- **Optional Labels** - Name your transfers (stored locally)
+- **Local History** - Track deposits and claims in browser
+- **History Settings** - Toggle save history on/off, clear all
+- **Explorer Links** - Quick access to Solana Explorer for each transaction
+
+### Dashboard (My Transfers)
+- **Deposits Tab** - View all deposits with status (Active/Expired/Claimed)
+- **Claims Tab** - View received transfers with SOL amounts
+- **Stats Overview** - Total, Active, Expired, Completed counts
+- **SOL Tracking** - Total SOL locked and received
+- **Refund Button** - One-click refund for expired deposits
 
 ---
 
@@ -87,15 +104,26 @@ If unclaimed, sender can refund after expiration (1 hour to 30 days).
 
 ```rust
 pub struct PrivateDeposit {
-    pub depositor: Pubkey,      // 32 bytes
-    pub claim_hash: [u8; 32],   // SHA256 of secret
-    pub amount: u64,            // Lamports
-    pub claimed: bool,          // Claim status
-    pub bump: u8,               // PDA bump
-    pub created_at: i64,        // Unix timestamp
+    pub depositor: Pubkey,      // 32 bytes - Sender's wallet
+    pub claim_hash: [u8; 32],   // SHA256 of secret code
+    pub amount: u64,            // Amount in lamports
+    pub claimed: bool,          // Claim/refund status
+    pub bump: u8,               // PDA bump seed
+    pub created_at: i64,        // Creation timestamp
     pub expires_at: i64,        // Expiration timestamp
 }
 ```
+
+### Error Codes
+
+| Code | Name | Description |
+|------|------|-------------|
+| 6000 | AlreadyClaimed | Deposit was already claimed or refunded |
+| 6001 | InvalidSecret | Secret code doesn't match claim_hash |
+| 6002 | InvalidAmount | Amount is below minimum (0.001605 SOL) |
+| 6003 | DepositExpired | Cannot claim after expiration |
+| 6004 | NotExpiredYet | Cannot refund before expiration |
+| 6005 | Unauthorized | Only depositor can refund |
 
 ---
 
@@ -136,21 +164,28 @@ PrivyLink provides **transactional privacy** through intermediary vaults:
 
 ## Roadmap
 
-### Phase 1 - MVP (Current)
+### Phase 1 - MVP (Complete)
 - [x] Private deposits with secret codes
 - [x] Magic links with QR codes
-- [x] Configurable expiration
+- [x] QR code download as PNG
+- [x] Configurable expiration (1h to 30 days)
 - [x] Auto-refund for expired deposits
-- [x] My Deposits dashboard
+- [x] My Transfers dashboard (Deposits + Claims)
+- [x] Wallet balance display and validation
+- [x] Secret strength indicator
+- [x] Optional labels for transfers
+- [x] Local history with settings
+- [x] Explorer links for all transactions
 - [x] Devnet deployment
 
-### Phase 2 - Enhanced Privacy
+### Phase 2 - Enhanced Privacy (Planned)
 - [ ] Arcium MPC integration
 - [ ] Encrypted metadata
 - [ ] Stealth addresses
 
 ### Phase 3 - Production
 - [ ] Mainnet deployment
+- [ ] Platform fee (0.25%)
 - [ ] Multi-token support (SPL tokens)
 - [ ] Batch transfers
 - [ ] Mobile app
@@ -205,6 +240,15 @@ Configure your wallet for **Devnet**:
 
 Get devnet SOL: [faucet.solana.com](https://faucet.solana.com/)
 
+### Test Flow
+
+1. **Connect wallet** (Solflare or Phantom on Devnet)
+2. **Create deposit** with 0.01 SOL, set expiration
+3. **Copy magic link** or scan QR code
+4. **Open in new tab/device**, connect different wallet
+5. **Enter secret code** and claim
+6. **Check My Transfers** - deposit shows as "Claimed"
+
 ---
 
 ## Project Structure
@@ -213,23 +257,51 @@ Get devnet SOL: [faucet.solana.com](https://faucet.solana.com/)
 privylink/
 ├── app/                    # Next.js frontend
 │   ├── components/         # React components
-│   ├── deposits/           # My Deposits page
+│   │   └── vault-card.tsx  # Main deposit/claim card
+│   ├── deposits/           # My Transfers page
 │   ├── generated/          # Codama-generated client
 │   └── page.tsx            # Landing page
 ├── anchor/                 # Solana program
 │   └── programs/vault/     # Anchor smart contract
+│       └── src/lib.rs      # Contract logic
+├── public/                 # Static assets
+│   ├── logo-privylink.png  # Logo
+│   ├── solflare.png        # Wallet icons
+│   └── phantom.png
 └── README.md
 ```
 
 ---
 
+## Screenshots
+
+### Create Deposit
+- Amount input with wallet balance
+- Secret code with strength indicator
+- Expiration selector
+- Optional label
+
+### Success State
+- QR Code (click to enlarge, download as PNG)
+- Complete magic link
+- Deposit details for manual sharing
+
+### My Transfers
+- Deposits tab with refund option
+- Claims tab with SOL received
+- Settings to manage local history
+
+---
+
 ## Hackathon
 
-**Solana Privacy Hack 2026** — $100,000+ Prize Pool
+**[Solana Privacy Hack 2026](https://solana.com/pt/privacyhack)** — $100,000+ Prize Pool
 
 Competing for:
 - **Private Payments Track** - $15,000
 - **Helius Bounty** - $5,000 *(using Helius RPC)*
+
+🔗 [solana.com/pt/privacyhack](https://solana.com/pt/privacyhack)
 
 ---
 

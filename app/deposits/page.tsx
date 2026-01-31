@@ -55,13 +55,27 @@ interface Deposit {
   status: "active" | "expired" | "claimed";
 }
 
+interface ClaimRecord {
+  pda: string;
+  depositor: string;
+  depositId: string;
+  amount?: number;
+  claimedAt: number;
+}
+
 function DepositsContent() {
   const { wallet, status } = useWalletConnection();
   const { send, isSending } = useSendTransaction();
   const searchParams = useSearchParams();
 
   const [deposits, setDeposits] = useState<Deposit[]>([]);
+  const [claims, setClaims] = useState<ClaimRecord[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [labels, setLabels] = useState<Record<string, string>>({});
+  const [hiddenDeposits, setHiddenDeposits] = useState<string[]>([]);
+  const [saveHistory, setSaveHistory] = useState(true);
+  const [mainTab, setMainTab] = useState<"deposits" | "claims">("deposits");
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   // Read tab from URL or default to "all"
   const tabParam = searchParams.get("tab");
@@ -155,6 +169,20 @@ function DepositsContent() {
 
       allDeposits.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
       setDeposits(allDeposits);
+
+      // If save history is disabled, auto-hide new deposits (except expired ones)
+      const saveHistorySetting = localStorage.getItem("privylink_save_history");
+      if (saveHistorySetting === "false") {
+        const storedHidden = JSON.parse(localStorage.getItem("privylink_hidden_deposits") || "[]");
+        const newDepositsToHide = allDeposits
+          .filter(d => d.status !== "expired" && !storedHidden.includes(d.pda))
+          .map(d => d.pda);
+        if (newDepositsToHide.length > 0) {
+          const updatedHidden = [...storedHidden, ...newDepositsToHide];
+          localStorage.setItem("privylink_hidden_deposits", JSON.stringify(updatedHidden));
+          setHiddenDeposits(updatedHidden);
+        }
+      }
     } catch (err: any) {
       console.error("Fetch deposits failed:", err);
       // Don't show error for rate limiting - just show empty state
@@ -169,6 +197,52 @@ function DepositsContent() {
   useEffect(() => {
     if (status === "connected" && walletAddress) fetchDeposits();
   }, [status, walletAddress, fetchDeposits]);
+
+  // Load labels, claims, hidden deposits and settings from localStorage
+  useEffect(() => {
+    const storedLabels = localStorage.getItem("privylink_labels");
+    if (storedLabels) {
+      setLabels(JSON.parse(storedLabels));
+    }
+    const storedClaims = localStorage.getItem("privylink_claims");
+    if (storedClaims) {
+      setClaims(JSON.parse(storedClaims));
+    }
+    const storedHidden = localStorage.getItem("privylink_hidden_deposits");
+    if (storedHidden) {
+      setHiddenDeposits(JSON.parse(storedHidden));
+    }
+    const storedSaveHistory = localStorage.getItem("privylink_save_history");
+    setSaveHistory(storedSaveHistory !== "false");
+  }, []);
+
+  // Toggle save history
+  const handleToggleSaveHistory = () => {
+    const newValue = !saveHistory;
+    setSaveHistory(newValue);
+    localStorage.setItem("privylink_save_history", newValue ? "true" : "false");
+  };
+
+  // Clear all history (including hiding deposits - except expired ones that need refund)
+  const handleClearHistory = () => {
+    // Hide only deposits that are NOT expired (active or claimed can be hidden)
+    // Expired deposits need to be refunded first before they can be hidden
+    const hidablePdas = deposits
+      .filter(d => d.status !== "expired")
+      .map(d => d.pda);
+
+    const newHidden = [...hiddenDeposits, ...hidablePdas];
+    localStorage.setItem("privylink_hidden_deposits", JSON.stringify(newHidden));
+    setHiddenDeposits(newHidden);
+
+    // Clear labels and claims
+    localStorage.removeItem("privylink_labels");
+    localStorage.removeItem("privylink_claims");
+    setLabels({});
+    setClaims([]);
+    setShowClearConfirm(false);
+  };
+
 
   const handleRefund = useCallback(async (deposit: Deposit) => {
     if (!walletAddress || !wallet) return;
@@ -222,7 +296,12 @@ function DepositsContent() {
     }
   }, [walletAddress, wallet, send]);
 
-  const filtered = deposits.filter((d) => {
+  // Filter out hidden deposits (but always show expired ones - they need refund)
+  const visibleDeposits = deposits.filter(d =>
+    d.status === "expired" || !hiddenDeposits.includes(d.pda)
+  );
+
+  const filtered = visibleDeposits.filter((d) => {
     if (activeTab === "all") return true;
     if (activeTab === "active") return d.status === "active";
     if (activeTab === "expired") return d.status === "expired";
@@ -231,12 +310,13 @@ function DepositsContent() {
   });
 
   const stats = {
-    total: deposits.length,
-    active: deposits.filter((d) => d.status === "active").length,
-    expired: deposits.filter((d) => d.status === "expired").length,
-    completed: deposits.filter((d) => d.status === "claimed").length,
-    totalValue: deposits.filter((d) => d.status === "active").reduce((sum, d) => sum + Number(d.amount), 0) / 1e9,
+    total: visibleDeposits.length,
+    active: visibleDeposits.filter((d) => d.status === "active").length,
+    expired: visibleDeposits.filter((d) => d.status === "expired").length,
+    completed: visibleDeposits.filter((d) => d.status === "claimed").length,
+    totalValue: visibleDeposits.filter((d) => d.status === "active").reduce((sum, d) => sum + Number(d.amount), 0) / 1e9,
   };
+
 
   // Not connected
   if (status !== "connected") {
@@ -334,11 +414,76 @@ function DepositsContent() {
         </Link>
 
         {/* Title */}
-        <div className="mb-8">
-          <h1 className="heading-2 mb-2">My Deposits</h1>
-          <p className="text-white/80">Track and manage your private transfers.</p>
+        <div className="mb-6">
+          <h1 className="heading-2 mb-2">My Transfers</h1>
+          <p className="text-white/80">Track your deposits and claims.</p>
         </div>
 
+        {/* Settings Card */}
+        <div className="mb-8 card border-sol-purple/30 bg-sol-purple/5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sol-purple/20">
+                <svg className="h-5 w-5 text-sol-purple" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-white">Local History</p>
+                <p className="text-xs text-white/60">Data stored only in your browser</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <span className="text-xs text-white/70">Save history</span>
+                <button
+                  onClick={handleToggleSaveHistory}
+                  className={`relative h-6 w-11 rounded-full transition-colors ${saveHistory ? 'bg-sol-green' : 'bg-white/20'}`}
+                >
+                  <span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-transform ${saveHistory ? 'left-6' : 'left-1'}`} />
+                </button>
+              </label>
+              <button
+                onClick={() => setShowClearConfirm(true)}
+                className="btn-ghost text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10"
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Clear all
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Tabs: Deposits / Claims */}
+        <div className="mb-6 flex rounded-lg bg-bg-elevated p-1">
+          <button
+            onClick={() => setMainTab("deposits")}
+            className={`flex-1 rounded-md px-4 py-2.5 text-sm font-medium transition ${
+              mainTab === "deposits"
+                ? "bg-sol-purple text-white"
+                : "text-white/70 hover:text-white"
+            }`}
+          >
+            My Deposits ({visibleDeposits.length})
+          </button>
+          <button
+            onClick={() => setMainTab("claims")}
+            className={`flex-1 rounded-md px-4 py-2.5 text-sm font-medium transition ${
+              mainTab === "claims"
+                ? "bg-sol-purple text-white"
+                : "text-white/70 hover:text-white"
+            }`}
+          >
+            My Claims ({claims.length})
+          </button>
+        </div>
+
+        {/* Deposits Tab Content */}
+        {mainTab === "deposits" && (
+          <>
         {/* Stats */}
         <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-5">
           <div className="card text-center">
@@ -434,7 +579,9 @@ function DepositsContent() {
         {/* Deposits Grid */}
         {!isLoading && filtered.length > 0 && (
           <div className="space-y-4">
-            {filtered.map((d) => (
+            {filtered.map((d) => {
+              const label = labels[d.pda];
+              return (
               <div key={d.pda} className="card-hover">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div className="space-y-2">
@@ -448,6 +595,9 @@ function DepositsContent() {
                       </span>
                       <span className="text-xs text-white/60">{d.createdAt.toLocaleDateString()}</span>
                     </div>
+                    {label && (
+                      <p className="text-sm font-medium text-sol-purple">{label}</p>
+                    )}
                     <p className="text-2xl font-bold">
                       <span className="text-white">{(Number(d.amount) / 1e9).toFixed(4)}</span>
                       <span className="ml-1 text-sm text-white/70">SOL</span>
@@ -461,6 +611,18 @@ function DepositsContent() {
                   </div>
 
                   <div className="flex gap-2">
+                    <a
+                      href={`https://explorer.solana.com/address/${d.pda}?cluster=devnet`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-lg bg-white/5 px-3 py-2 text-xs text-white/60 hover:text-white hover:bg-white/10 transition flex items-center gap-1"
+                      title="View on Solana Explorer"
+                    >
+                      Explorer
+                      <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                    </a>
                     {d.status === "expired" && (
                       <button
                         onClick={() => handleRefund(d)}
@@ -492,7 +654,145 @@ function DepositsContent() {
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
+          </div>
+        )}
+          </>
+        )}
+
+        {/* Claims Tab Content */}
+        {mainTab === "claims" && (
+          <>
+            {/* Stats for Claims - same grid as Deposits for consistent width */}
+            <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-5">
+              <div className="card text-center">
+                <p className="text-3xl font-bold text-white">{claims.length}</p>
+                <p className="text-xs text-white/70">Total</p>
+              </div>
+              <div className="card text-center">
+                <p className="text-3xl font-bold text-sol-green">{claims.length}</p>
+                <p className="text-xs text-white/70">Received</p>
+              </div>
+              <div className="card text-center sm:col-span-3">
+                <p className="text-3xl font-bold text-gradient">
+                  {claims.reduce((sum, c) => sum + (c.amount || 0), 0).toFixed(2)}
+                </p>
+                <p className="text-xs text-white/70">SOL Received</p>
+              </div>
+            </div>
+
+
+            {claims.length === 0 ? (
+              <div className="card p-12 text-center">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-bg-elevated">
+                  <svg className="h-8 w-8 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h2 className="heading-3 mb-2 text-white">No Claims Yet</h2>
+                <p className="text-white/70 mb-6">
+                  Claims you receive will appear here.
+                </p>
+                <Link href="/?tab=claim" className="btn-primary">Claim a Transfer</Link>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {claims.map((claim, index) => (
+                  <div key={`${claim.pda}-${index}`} className="card-hover">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <span className="badge badge-green">Received</span>
+                          <span className="text-xs text-white/60">
+                            {new Date(claim.claimedAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                        {claim.amount && claim.amount > 0 && (
+                          <p className="text-2xl font-bold">
+                            <span className="text-sol-green">{claim.amount.toFixed(4)}</span>
+                            <span className="ml-1 text-sm text-white/70">SOL</span>
+                          </p>
+                        )}
+                        <p className="text-sm text-white/70">
+                          From <span className="font-mono">{claim.depositor.slice(0, 4)}...{claim.depositor.slice(-4)}</span>
+                        </p>
+                        <p className="text-xs text-white/60">
+                          {new Date(claim.claimedAt).toLocaleString()}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <a
+                          href={`https://explorer.solana.com/address/${claim.pda}?cluster=devnet`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="rounded-lg bg-white/5 px-3 py-2 text-xs text-white/60 hover:text-white hover:bg-white/10 transition flex items-center gap-1"
+                        >
+                          Explorer
+                          <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          </svg>
+                        </a>
+                        <span className="rounded-lg bg-sol-green/10 px-4 py-2 text-xs font-medium text-sol-green flex items-center gap-2">
+                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          Completed
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Clear All Confirmation Modal */}
+        {showClearConfirm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <div
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={() => setShowClearConfirm(false)}
+            />
+
+            {/* Modal */}
+            <div className="relative w-full max-w-md rounded-2xl border border-border-subtle bg-bg-primary p-6 shadow-2xl">
+              {/* Icon */}
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-500/10">
+                <svg className="h-8 w-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </div>
+
+              {/* Title */}
+              <h3 className="mb-2 text-center text-xl font-bold text-white">
+                Are you sure?
+              </h3>
+
+              {/* Description */}
+              <p className="mb-6 text-center text-sm text-white/70">
+                This will clear your entire transfer history, including labels and claims.
+                Expired deposits pending refund will remain visible.
+              </p>
+
+              {/* Buttons */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowClearConfirm(false)}
+                  className="flex-1 rounded-lg border border-white/20 bg-transparent px-4 py-3 text-sm font-medium text-white transition hover:bg-white/5"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleClearHistory}
+                  className="flex-1 rounded-lg bg-red-500 px-4 py-3 text-sm font-medium text-white transition hover:bg-red-600"
+                >
+                  Yes, clear all
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </main>
