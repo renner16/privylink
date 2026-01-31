@@ -122,6 +122,18 @@ export default function Home() {
   // State for showing network warning
   const [showNetworkWarning, setShowNetworkWarning] = useState(false);
 
+  // State for detected wallets (client-side only to avoid hydration mismatch)
+  const [detectedWallets, setDetectedWallets] = useState<Record<string, boolean>>({});
+
+  // Detect wallets on client-side only
+  useEffect(() => {
+    const detected: Record<string, boolean> = {};
+    WALLET_OPTIONS.forEach(wallet => {
+      detected[wallet.id] = wallet.detectGlobal();
+    });
+    setDetectedWallets(detected);
+  }, []);
+
   // Helper to find connector or fallback to download
   const handleWalletClick = (walletOption: typeof WALLET_OPTIONS[0]) => {
     const connector = connectors.find(
@@ -129,7 +141,7 @@ export default function Home() {
     );
     if (connector) {
       connect(connector.id);
-    } else if (walletOption.detectGlobal()) {
+    } else if (detectedWallets[walletOption.id]) {
       // Extension exists but can't connect (not on localhost/HTTPS)
       setShowNetworkWarning(true);
     } else {
@@ -141,9 +153,7 @@ export default function Home() {
   // Check if a wallet is available (via connector or global detection)
   const isWalletAvailable = (walletId: string) => {
     const viaConnector = connectors.some((c) => c.name.toLowerCase().includes(walletId));
-    const wallet = WALLET_OPTIONS.find(w => w.id === walletId);
-    const viaGlobal = wallet?.detectGlobal() ?? false;
-    return viaConnector || viaGlobal;
+    return viaConnector || detectedWallets[walletId];
   };
 
   // Check if wallet can actually connect (connector available)
