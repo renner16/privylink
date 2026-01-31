@@ -308,7 +308,17 @@ export function VaultCard() {
       setDepositLabel("");
     } catch (err: any) {
       console.error("Create failed:", err);
-      setTxStatus(err?.message || "Transaction failed");
+      let msg = err?.message || "Transaction failed";
+      const msgLower = msg.toLowerCase();
+
+      if (msgLower.includes("cancelled") || msgLower.includes("canceled") || msgLower.includes("rejected") || msgLower.includes("denied")) {
+        msg = "Transação cancelada. Se você tem outra página aberta usando a carteira, feche-a e tente novamente.";
+      } else if (msgLower.includes("already pending") || msgLower.includes("busy") || msgLower.includes("locked")) {
+        msg = "Outra página está usando a carteira. Feche-a para continuar.";
+      } else if (msgLower.includes("insufficient")) {
+        msg = "Saldo insuficiente para esta transação.";
+      }
+      setTxStatus(msg);
       setTxStatusType("error");
     }
   }, [walletAddress, wallet, amount, secretCode, expirationHours, send]);
@@ -434,12 +444,18 @@ export function VaultCard() {
     } catch (err: any) {
       console.error("Claim failed:", err);
       let msg = err?.message || "Unknown error";
+      const msgLower = msg.toLowerCase();
+
       if (msg.includes("InvalidSecret") || msg.includes("#6001")) {
         msg = "Invalid secret code. Please check and try again.";
       } else if (msg.includes("AlreadyClaimed") || msg.includes("#6000")) {
         msg = "This deposit has already been claimed or refunded. The funds are no longer available.";
       } else if (msg.includes("DepositExpired") || msg.includes("#6003")) {
         msg = "This deposit has expired. The sender can now refund it.";
+      } else if (msgLower.includes("cancelled") || msgLower.includes("canceled") || msgLower.includes("rejected") || msgLower.includes("denied")) {
+        msg = "Transação cancelada. Se você tem outra página aberta usando a carteira, feche-a e tente novamente.";
+      } else if (msgLower.includes("already pending") || msgLower.includes("busy") || msgLower.includes("locked")) {
+        msg = "Outra página está usando a carteira. Feche-a para continuar.";
       }
       setTxStatus(msg);
       setTxStatusType("error");
