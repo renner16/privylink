@@ -264,7 +264,14 @@ export default function Home() {
         }
       }
 
-      // Desktop sem extensão ou fallback = abrir página de download
+      // Desktop sem extensão
+      if (!isMobile) {
+        setConnectionError(`Extensão ${walletOption.name} não detectada. Instale a extensão do navegador e recarregue a página.`);
+        window.open(walletOption.downloadUrl, "_blank");
+        return;
+      }
+
+      // Fallback = abrir página de download
       window.open(walletOption.downloadUrl, "_blank");
     }
   };
