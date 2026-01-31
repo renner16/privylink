@@ -128,15 +128,32 @@ export default function Home() {
   }, []);
 
   // Helper to find connector or fallback to download
-  const handleWalletClick = (walletOption: typeof WALLET_OPTIONS[0]) => {
+  const handleWalletClick = async (walletOption: typeof WALLET_OPTIONS[0]) => {
     const connector = connectors.find(
       (c) => c.name.toLowerCase().includes(walletOption.id)
     );
+
     if (connector) {
       connect(connector.id);
     } else if (detectedWallets[walletOption.id]) {
-      // Extension exists but can't connect (not on localhost/HTTPS)
-      setShowNetworkWarning(true);
+      // Extension detected via window global - try to connect directly
+      try {
+        if (walletOption.id === "solflare" && (window as any).solflare) {
+          const solflare = (window as any).solflare;
+          await solflare.connect();
+          // Reload page to let the provider detect the connected wallet
+          window.location.reload();
+        } else if (walletOption.id === "phantom" && (window as any).phantom?.solana) {
+          const phantom = (window as any).phantom.solana;
+          await phantom.connect();
+          window.location.reload();
+        } else {
+          setShowNetworkWarning(true);
+        }
+      } catch (err) {
+        console.error("Direct wallet connection failed:", err);
+        setShowNetworkWarning(true);
+      }
     } else {
       // Wallet not installed - open download page
       window.open(walletOption.downloadUrl, "_blank");
