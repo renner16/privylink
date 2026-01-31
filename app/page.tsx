@@ -85,6 +85,23 @@ function TypewriterText({ texts, speed = 100, deleteSpeed = 50, pauseDuration = 
   );
 }
 
+// Detect if user is on mobile device
+const isMobileDevice = () => {
+  if (typeof window === "undefined") return false;
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+};
+
+// Generate deep link for mobile wallet apps
+const getMobileDeepLink = (walletId: string, url: string) => {
+  const encodedUrl = encodeURIComponent(url);
+  if (walletId === "solflare") {
+    return `https://solflare.com/ul/v1/browse/${encodedUrl}?ref=${encodedUrl}`;
+  } else if (walletId === "phantom") {
+    return `https://phantom.app/ul/browse/${encodedUrl}?ref=${encodedUrl}`;
+  }
+  return null;
+};
+
 // Wallet definitions for fallback when extensions aren't detected
 const WALLET_OPTIONS = [
   {
@@ -129,6 +146,17 @@ export default function Home() {
 
   // Helper to find connector or fallback to download
   const handleWalletClick = async (walletOption: typeof WALLET_OPTIONS[0]) => {
+    // Check if mobile device first
+    if (isMobileDevice()) {
+      const currentUrl = window.location.href;
+      const deepLink = getMobileDeepLink(walletOption.id, currentUrl);
+      if (deepLink) {
+        // Open wallet app with deep link
+        window.location.href = deepLink;
+        return;
+      }
+    }
+
     const connector = connectors.find(
       (c) => c.name.toLowerCase().includes(walletOption.id)
     );
