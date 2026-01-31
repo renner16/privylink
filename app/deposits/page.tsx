@@ -611,18 +611,6 @@ function DepositsContent() {
                   </div>
 
                   <div className="flex gap-2">
-                    <a
-                      href={`https://explorer.solana.com/address/${d.pda}?cluster=devnet`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="rounded-lg bg-white/5 px-3 py-2 text-xs text-white/60 hover:text-white hover:bg-white/10 transition flex items-center gap-1"
-                      title="View on Solana Explorer"
-                    >
-                      Explorer
-                      <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                      </svg>
-                    </a>
                     {d.status === "expired" && (
                       <button
                         onClick={() => handleRefund(d)}
@@ -721,25 +709,12 @@ function DepositsContent() {
                           {new Date(claim.claimedAt).toLocaleString()}
                         </p>
                       </div>
-                      <div className="flex gap-2">
-                        <a
-                          href={`https://explorer.solana.com/address/${claim.pda}?cluster=devnet`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="rounded-lg bg-white/5 px-3 py-2 text-xs text-white/60 hover:text-white hover:bg-white/10 transition flex items-center gap-1"
-                        >
-                          Explorer
-                          <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                          </svg>
-                        </a>
-                        <span className="rounded-lg bg-sol-green/10 px-4 py-2 text-xs font-medium text-sol-green flex items-center gap-2">
-                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                          Completed
-                        </span>
-                      </div>
+                      <span className="rounded-lg bg-sol-green/10 px-4 py-2 text-xs font-medium text-sol-green flex items-center gap-2">
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Completed
+                      </span>
                     </div>
                   </div>
                 ))}

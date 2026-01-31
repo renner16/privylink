@@ -115,6 +115,9 @@ export default function Home() {
   // State for showing network warning
   const [showNetworkWarning, setShowNetworkWarning] = useState(false);
 
+  // State for connection errors
+  const [connectionError, setConnectionError] = useState<string | null>(null);
+
   // State for detected wallets (client-side only to avoid hydration mismatch)
   const [detectedWallets, setDetectedWallets] = useState<Record<string, boolean>>({});
 
@@ -129,6 +132,8 @@ export default function Home() {
 
   // Helper to find connector or fallback to download
   const handleWalletClick = async (walletOption: typeof WALLET_OPTIONS[0]) => {
+    setConnectionError(null);
+
     const connector = connectors.find(
       (c) => c.name.toLowerCase().includes(walletOption.id)
     );
@@ -137,7 +142,19 @@ export default function Home() {
     const isDetectedNow = walletOption.detectGlobal();
 
     if (connector) {
-      connect(connector.id);
+      try {
+        await connect(connector.id);
+      } catch (err: any) {
+        console.error("Wallet connection failed:", err);
+        const errorMsg = err?.message?.toLowerCase() || "";
+        if (errorMsg.includes("already pending") || errorMsg.includes("resource") || errorMsg.includes("busy") || errorMsg.includes("locked")) {
+          setConnectionError("Outra página está usando a carteira. Feche-a para continuar.");
+        } else if (errorMsg.includes("rejected") || errorMsg.includes("denied") || errorMsg.includes("cancelled")) {
+          setConnectionError("Conexão rejeitada pelo usuário.");
+        } else {
+          setConnectionError("Erro ao conectar. Tente novamente.");
+        }
+      }
     } else if (isDetectedNow) {
       // Extension detected via window global - try to connect directly
       try {
@@ -153,9 +170,16 @@ export default function Home() {
         } else {
           setShowNetworkWarning(true);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("Direct wallet connection failed:", err);
-        setShowNetworkWarning(true);
+        const errorMsg = err?.message?.toLowerCase() || "";
+        if (errorMsg.includes("already pending") || errorMsg.includes("resource") || errorMsg.includes("busy") || errorMsg.includes("locked") || errorMsg.includes("already processing")) {
+          setConnectionError("Outra página está usando a carteira. Feche-a para continuar.");
+        } else if (errorMsg.includes("rejected") || errorMsg.includes("denied") || errorMsg.includes("cancelled")) {
+          setConnectionError("Conexão rejeitada pelo usuário.");
+        } else {
+          setShowNetworkWarning(true);
+        }
       }
     } else {
       // Wallet not installed - open download page
@@ -252,9 +276,17 @@ export default function Home() {
                   <>
                     <div
                       className="fixed inset-0 z-40"
-                      onClick={() => setWalletDropdownOpen(false)}
+                      onClick={() => {
+                        setWalletDropdownOpen(false);
+                        setConnectionError(null);
+                      }}
                     />
                     <div className="absolute right-0 top-full mt-2 z-50 w-64 rounded-lg border border-border-subtle bg-bg-primary p-2 shadow-lg">
+                      {connectionError && (
+                        <div className="mb-2 rounded-md bg-red-500/10 border border-red-500/30 p-3">
+                          <p className="text-xs text-red-400">{connectionError}</p>
+                        </div>
+                      )}
                       {showNetworkWarning && (
                         <div className="mb-2 rounded-md bg-amber-500/10 border border-amber-500/30 p-3">
                           <p className="text-xs text-amber-400 font-medium mb-1">Cannot connect via IP</p>
@@ -272,21 +304,20 @@ export default function Home() {
                             key={walletOption.id}
                             onClick={() => {
                               handleWalletClick(walletOption);
-                              if (canConnect) setWalletDropdownOpen(false);
                             }}
                             disabled={status === "connecting"}
                             className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm hover:bg-bg-elevated transition"
                           >
                             <img src={walletOption.icon} alt={walletOption.name} className="h-5 w-5" />
                             <span>{walletOption.name}</span>
-                            {installed && !canConnect && (
-                              <span className="ml-auto text-[10px] text-amber-400">Use localhost</span>
-                            )}
-                            {!installed && (
-                              <span className="ml-auto text-[10px] text-muted">Install</span>
-                            )}
-                            {canConnect && walletOption.recommended && (
+                            {(installed || canConnect) && walletOption.recommended && (
                               <span className="ml-auto text-xs text-sol-green">Recommended</span>
+                            )}
+                            {(installed || canConnect) && !walletOption.recommended && (
+                              <span className="ml-auto text-xs text-sol-green">Connect</span>
+                            )}
+                            {!installed && !canConnect && (
+                              <span className="ml-auto text-[10px] text-muted">Install</span>
                             )}
                           </button>
                         );
@@ -401,6 +432,11 @@ export default function Home() {
             <div className="card">
               {status !== "connected" ? (
                 <div className="flex flex-col gap-4">
+                  {connectionError && (
+                    <div className="rounded-lg bg-red-500/10 border border-red-500/30 p-4">
+                      <p className="text-sm text-red-400">{connectionError}</p>
+                    </div>
+                  )}
                   {showNetworkWarning && (
                     <div className="rounded-lg bg-amber-500/10 border border-amber-500/30 p-4">
                       <p className="text-sm text-amber-400 font-medium mb-1">Cannot connect via network IP</p>
@@ -419,6 +455,7 @@ export default function Home() {
                       {WALLET_OPTIONS.map((walletOption, index) => {
                         const installed = isWalletAvailable(walletOption.id);
                         const canConnect = canWalletConnect(walletOption.id);
+                        const isAvailable = installed || canConnect;
                         return (
                           <button
                             key={walletOption.id}
@@ -428,10 +465,7 @@ export default function Home() {
                           >
                             <img src={walletOption.icon} alt={walletOption.name} className="h-5 w-5" />
                             {walletOption.name}
-                            {installed && !canConnect && (
-                              <span className="text-[10px] opacity-70">(Use localhost)</span>
-                            )}
-                            {!installed && (
+                            {!isAvailable && (
                               <span className="text-[10px] opacity-70">(Install)</span>
                             )}
                           </button>
