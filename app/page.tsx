@@ -102,15 +102,46 @@ const isInWalletBrowser = () => {
 // Generate deep link to open current page in wallet's browser
 const getWalletDeepLink = (walletId: string): string | null => {
   if (typeof window === "undefined") return null;
-  const currentUrl = encodeURIComponent(window.location.href);
+
+  // Reconstruir URL com parâmetros de claim do sessionStorage (se existirem)
+  // Isso é necessário porque a URL é limpa após parse dos parâmetros
+  let targetUrl = window.location.origin + window.location.pathname;
+
+  try {
+    const savedClaimData = sessionStorage.getItem("privylink_claim_data");
+    if (savedClaimData) {
+      const data = JSON.parse(savedClaimData);
+      if (data.depositor && data.depositId) {
+        const params = new URLSearchParams();
+        params.set("depositor", data.depositor);
+        params.set("deposit_id", data.depositId);
+        if (data.secret) params.set("secret", data.secret);
+        targetUrl += "?" + params.toString();
+      }
+    }
+  } catch (e) {
+    console.warn("Failed to read claim data for deep link:", e);
+  }
+
+  // Se não tinha claim data, usa a URL atual (pode ter outros params)
+  if (!targetUrl.includes("?") && window.location.search) {
+    targetUrl += window.location.search;
+  }
+
+  // Adicionar hash se existir
+  if (window.location.hash) {
+    targetUrl += window.location.hash;
+  }
+
+  const encodedUrl = encodeURIComponent(targetUrl);
 
   switch (walletId) {
     case "phantom":
       // Phantom Universal Link - abre no app se instalado, senão redireciona para store
-      return `https://phantom.app/ul/browse/${currentUrl}`;
+      return `https://phantom.app/ul/browse/${encodedUrl}`;
     case "solflare":
       // Solflare Universal Link
-      return `https://solflare.com/ul/v1/browse/${currentUrl}`;
+      return `https://solflare.com/ul/v1/browse/${encodedUrl}`;
     default:
       return null;
   }
