@@ -1,7 +1,7 @@
 # PrivyLink — Progresso
 
 ## Última atualização
-01/02/2026 00:15
+31/01/2026 16:30
 
 ## ✅ Concluído
 - Estrutura base do projeto (Next.js 16 + Anchor)
@@ -56,8 +56,13 @@
   - **Página My Transfers:**
     - **SOL Received calculado** baseado nos claims salvos
     - **Valor em SOL** exibido nos cards de claims
-    - **Link "Explorer"** em cada depósito e claim
     - Claims agora salvam o amount no localStorage
+- **[31/01] CORREÇÕES UX/CONEXÃO:**
+  - **Removidos botões "Explorer"** da página My Transfers (mais privacidade - usuário vê na wallet)
+  - **Detecção automática de wallet** instalada (não mostra "Install" se já tem)
+  - **Erro claro para múltiplas páginas**: "Outra página está usando a carteira. Feche-a para continuar."
+  - **Tratamento de erros** em Send/Claim (cancelled, busy, locked, insufficient)
+  - **Conexão de wallet no primeiro clique** (prioriza connector da biblioteca)
 
 ## 🚧 Em progresso
 - (nenhum)
@@ -74,10 +79,9 @@
 
 ## 📋 Próximos passos
 1. Gravar vídeo demo (3 minutos)
-2. Fazer commit e push das mudanças
-3. Submeter no hackathon (deadline: 1 de Fevereiro 2026)
-4. (Futuro) Taxa de 0.25%
-5. (Futuro) Integração Arcium MPC (Fase 2)
+2. Submeter no hackathon (deadline: 1 de Fevereiro 2026)
+3. (Futuro) Taxa de 0.25%
+4. (Futuro) Integração Arcium MPC (Fase 2)
 
 ## 📊 Informações do Deploy
 
