@@ -608,7 +608,18 @@ export function VaultCard() {
 
   return (
     <div className="animated-border">
-      <div className="card">
+      <div className="card relative">
+        {/* Loading Overlay */}
+        {isSending && (
+          <div className="absolute inset-0 z-50 flex flex-col items-center justify-center rounded-2xl bg-bg-primary/95 backdrop-blur-sm">
+            <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-sol-purple/30 border-t-sol-purple"></div>
+            <p className="text-lg font-medium text-foreground mb-2">Processando transação...</p>
+            <p className="text-sm text-muted text-center max-w-xs">
+              {txStatus || "Aguarde enquanto a transação é confirmada na blockchain."}
+            </p>
+          </div>
+        )}
+
         <h2 className="heading-3 mb-2">Private Transfer</h2>
         <p className="body-small mb-6">Send SOL privately using secret codes.</p>
 
