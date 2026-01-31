@@ -65,18 +65,26 @@ Sender ──▶ Vault PDA ──▶ Receiver
 ### Deposit Success (Desktop)
 ![Send Success](public/screenshots/send-success-desktop.png)
 
-### Claim Transfer
-**Desktop**
+### Claim Transfer (Desktop)
 ![Claim Desktop](public/screenshots/claim-desktop.png)
-
-**Mobile**
-![Claim Mobile](public/screenshots/claim-mobile.png)
-
-### Create Deposit (Mobile)
-![Send Mobile](public/screenshots/send-mobile.png)
 
 ### Dashboard — My Transfers
 ![Dashboard](public/screenshots/dashboard-desktop.png)
+
+### Mobile Screenshots
+
+<table>
+  <tr>
+    <td align="center">
+      <strong>Claim Transfer</strong><br/>
+      <img src="public/screenshots/claim-mobile.png" width="250" alt="Claim Mobile"/>
+    </td>
+    <td align="center">
+      <strong>Create Deposit</strong><br/>
+      <img src="public/screenshots/send-mobile.png" width="250" alt="Send Mobile"/>
+    </td>
+  </tr>
+</table>
 
 ---
 
