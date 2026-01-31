@@ -65,8 +65,8 @@ function DepositsContent() {
 
   // Read tab from URL or default to "all"
   const tabParam = searchParams.get("tab");
-  const initialTab = tabParam === "active" || tabParam === "expired" ? tabParam : "all";
-  const [activeTab, setActiveTab] = useState<"all" | "active" | "expired">(initialTab);
+  const initialTab = tabParam === "active" || tabParam === "expired" || tabParam === "completed" ? tabParam : "all";
+  const [activeTab, setActiveTab] = useState<"all" | "active" | "expired" | "completed">(initialTab);
   const [refundingId, setRefundingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -226,6 +226,7 @@ function DepositsContent() {
     if (activeTab === "all") return true;
     if (activeTab === "active") return d.status === "active";
     if (activeTab === "expired") return d.status === "expired";
+    if (activeTab === "completed") return d.status === "claimed";
     return true;
   });
 
@@ -233,6 +234,7 @@ function DepositsContent() {
     total: deposits.length,
     active: deposits.filter((d) => d.status === "active").length,
     expired: deposits.filter((d) => d.status === "expired").length,
+    completed: deposits.filter((d) => d.status === "claimed").length,
     totalValue: deposits.filter((d) => d.status === "active").reduce((sum, d) => sum + Number(d.amount), 0) / 1e9,
   };
 
@@ -240,71 +242,91 @@ function DepositsContent() {
   if (status !== "connected") {
     return (
       <div className="min-h-screen bg-bg-primary text-foreground">
-        <div className="pointer-events-none fixed inset-0">
-          <div className="absolute -top-[300px] left-1/2 h-[600px] w-[600px] -translate-x-1/2 rounded-full" style={{ background: "radial-gradient(circle, rgba(153, 69, 255, 0.1) 0%, transparent 70%)" }} />
+        {/* Background Gradient Effects */}
+        <div className="pointer-events-none fixed inset-0 overflow-hidden">
+          <div
+            className="absolute -top-[400px] left-1/2 h-[800px] w-[800px] -translate-x-1/2 rounded-full"
+            style={{ background: "radial-gradient(circle, rgba(153, 69, 255, 0.15) 0%, transparent 70%)" }}
+          />
+          <div
+            className="absolute top-1/3 -right-[200px] h-[600px] w-[600px] rounded-full"
+            style={{ background: "radial-gradient(circle, rgba(20, 241, 149, 0.08) 0%, transparent 70%)" }}
+          />
         </div>
 
-        <header className="sticky top-0 z-50 border-b border-border-subtle bg-bg-primary/80 backdrop-blur-xl">
+        <header className="fixed top-0 left-0 right-0 z-50 border-b border-border-subtle bg-bg-primary/80 backdrop-blur-xl">
           <div className="container-main flex h-16 items-center justify-between">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sol-purple">
-                <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-              </div>
-              <span className="text-lg font-semibold">PrivyLink</span>
+            <Link href="/" className="flex items-center">
+              <img src="/logo-privylink.png" alt="PrivyLink" className="h-8" />
             </Link>
           </div>
         </header>
 
+        <div className="h-16" />
+
         <main className="relative z-10 container-narrow py-16">
           <div className="card p-12 text-center">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-bg-elevated">
-              <svg className="h-8 w-8 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="h-8 w-8 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
             </div>
-            <h1 className="heading-3 mb-2">Connect Your Wallet</h1>
-            <p className="body-small mb-6">Connect your wallet to view your deposits.</p>
+            <h1 className="heading-3 mb-2 text-white">Connect Your Wallet</h1>
+            <p className="text-white/70 mb-6">Connect your wallet to view your deposits.</p>
             <Link href="/" className="btn-primary">Go to App</Link>
           </div>
         </main>
+
+        {/* Footer */}
+        <footer className="border-t border-border-subtle">
+          <div className="container-main py-8">
+            <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
+              <img src="/logo-privylink.png" alt="PrivyLink" className="h-6" />
+              <p className="text-xs text-white/60">Privacy is not a luxury, it's a fundamental right.</p>
+            </div>
+          </div>
+        </footer>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-bg-primary text-foreground">
-      <div className="pointer-events-none fixed inset-0">
-        <div className="absolute -top-[300px] left-1/2 h-[600px] w-[600px] -translate-x-1/2 rounded-full" style={{ background: "radial-gradient(circle, rgba(153, 69, 255, 0.1) 0%, transparent 70%)" }} />
+    <div className="min-h-screen bg-bg-primary text-foreground flex flex-col">
+      {/* Background Gradient Effects */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div
+          className="absolute -top-[400px] left-1/2 h-[800px] w-[800px] -translate-x-1/2 rounded-full"
+          style={{ background: "radial-gradient(circle, rgba(153, 69, 255, 0.15) 0%, transparent 70%)" }}
+        />
+        <div
+          className="absolute top-1/3 -right-[200px] h-[600px] w-[600px] rounded-full"
+          style={{ background: "radial-gradient(circle, rgba(20, 241, 149, 0.08) 0%, transparent 70%)" }}
+        />
       </div>
 
-      <header className="sticky top-0 z-50 border-b border-border-subtle bg-bg-primary/80 backdrop-blur-xl">
+      <header className="fixed top-0 left-0 right-0 z-50 border-b border-border-subtle bg-bg-primary/80 backdrop-blur-xl">
         <div className="container-main flex h-16 items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sol-purple">
-              <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-            </div>
-            <span className="text-lg font-semibold">PrivyLink</span>
+          <Link href="/" className="flex items-center">
+            <img src="/logo-privylink.png" alt="PrivyLink" className="h-8" />
           </Link>
 
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
+            <div className="hidden items-center gap-2 sm:flex">
               <span className="status-online" />
               <span className="text-xs font-medium text-sol-green">Devnet</span>
             </div>
-            <code className="hidden rounded-md bg-bg-elevated px-3 py-1.5 font-mono text-xs text-muted md:block">
+            <code className="hidden rounded-md bg-bg-elevated px-3 py-1.5 font-mono text-xs text-white lg:block">
               {walletAddress?.toString().slice(0, 4)}...{walletAddress?.toString().slice(-4)}
             </code>
           </div>
         </div>
       </header>
 
-      <main className="relative z-10 container-narrow py-8">
+      <div className="h-16" />
+
+      <main className="relative z-10 container-narrow py-8 flex-1">
         {/* Back Link */}
-        <Link href="/" className="mb-6 inline-flex items-center gap-2 text-sm text-muted transition hover:text-foreground">
+        <Link href="/" className="mb-6 inline-flex items-center gap-2 text-sm text-white/70 transition hover:text-white">
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
@@ -314,26 +336,30 @@ function DepositsContent() {
         {/* Title */}
         <div className="mb-8">
           <h1 className="heading-2 mb-2">My Deposits</h1>
-          <p className="body-small">Track and manage your private transfers.</p>
+          <p className="text-white/80">Track and manage your private transfers.</p>
         </div>
 
         {/* Stats */}
-        <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-5">
           <div className="card text-center">
-            <p className="text-3xl font-bold">{stats.total}</p>
-            <p className="text-xs text-muted">Total</p>
+            <p className="text-3xl font-bold text-white">{stats.total}</p>
+            <p className="text-xs text-white/70">Total</p>
           </div>
           <div className="card text-center">
             <p className="text-3xl font-bold text-sol-green">{stats.active}</p>
-            <p className="text-xs text-muted">Active</p>
+            <p className="text-xs text-white/70">Active</p>
           </div>
           <div className="card text-center">
             <p className="text-3xl font-bold text-amber-400">{stats.expired}</p>
-            <p className="text-xs text-muted">Expired</p>
+            <p className="text-xs text-white/70">Expired</p>
+          </div>
+          <div className="card text-center">
+            <p className="text-3xl font-bold text-sol-purple">{stats.completed}</p>
+            <p className="text-xs text-white/70">Completed</p>
           </div>
           <div className="card text-center">
             <p className="text-3xl font-bold text-gradient">{stats.totalValue.toFixed(2)}</p>
-            <p className="text-xs text-muted">SOL Locked</p>
+            <p className="text-xs text-white/70">SOL Locked</p>
           </div>
         </div>
 
@@ -350,11 +376,12 @@ function DepositsContent() {
         )}
 
         {/* Tabs */}
-        <div className="mb-6 flex gap-2">
+        <div className="mb-6 flex flex-wrap gap-2">
           {[
             { id: "all", label: "All", count: stats.total },
             { id: "active", label: "Active", count: stats.active },
             { id: "expired", label: "Expired", count: stats.expired },
+            { id: "completed", label: "Completed", count: stats.completed },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -362,7 +389,7 @@ function DepositsContent() {
               className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
                 activeTab === tab.id
                   ? "bg-sol-purple text-white"
-                  : "bg-bg-elevated text-muted hover:text-foreground"
+                  : "bg-bg-elevated text-white/70 hover:text-white"
               }`}
             >
               {tab.label} ({tab.count})
@@ -384,7 +411,7 @@ function DepositsContent() {
         {isLoading && (
           <div className="card p-12 text-center">
             <span className="spinner mx-auto mb-4" style={{ width: "2rem", height: "2rem" }} />
-            <p className="text-muted">Loading deposits...</p>
+            <p className="text-white/70">Loading deposits...</p>
           </div>
         )}
 
@@ -392,12 +419,12 @@ function DepositsContent() {
         {!isLoading && filtered.length === 0 && (
           <div className="card p-12 text-center">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-bg-elevated">
-              <svg className="h-8 w-8 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="h-8 w-8 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
               </svg>
             </div>
-            <h2 className="heading-3 mb-2">No Deposits Found</h2>
-            <p className="body-small mb-6">
+            <h2 className="heading-3 mb-2 text-white">No Deposits Found</h2>
+            <p className="text-white/70 mb-6">
               {activeTab === "all" ? "You haven't created any deposits yet." : `No ${activeTab} deposits.`}
             </p>
             <Link href="/" className="btn-primary">Create Deposit</Link>
@@ -415,18 +442,18 @@ function DepositsContent() {
                       <span className={`badge ${
                         d.status === "active" ? "badge-green" :
                         d.status === "expired" ? "bg-amber-400/15 border-amber-400/30 text-amber-400" :
-                        "bg-muted/10 border-muted/30 text-muted"
+                        "bg-white/10 border-white/30 text-white/70"
                       }`}>
                         {d.status === "active" ? "Active" : d.status === "expired" ? "Expired" : "Claimed"}
                       </span>
-                      <span className="text-xs text-subtle">{d.createdAt.toLocaleDateString()}</span>
+                      <span className="text-xs text-white/60">{d.createdAt.toLocaleDateString()}</span>
                     </div>
                     <p className="text-2xl font-bold">
-                      <span className="text-gradient">{(Number(d.amount) / 1e9).toFixed(4)}</span>
-                      <span className="ml-1 text-sm text-muted">SOL</span>
+                      <span className="text-white">{(Number(d.amount) / 1e9).toFixed(4)}</span>
+                      <span className="ml-1 text-sm text-white/70">SOL</span>
                     </p>
                     {d.expiresAt && (
-                      <p className="text-xs text-muted">
+                      <p className="text-xs text-white/60">
                         {d.status === "expired" ? "Expired " : "Expires "}
                         {d.expiresAt.toLocaleString()}
                       </p>
@@ -458,7 +485,7 @@ function DepositsContent() {
                       </span>
                     )}
                     {d.status === "claimed" && (
-                      <span className="rounded-lg bg-muted/10 px-4 py-2 text-xs text-muted">
+                      <span className="rounded-lg bg-white/10 px-4 py-2 text-xs text-white/70">
                         Completed
                       </span>
                     )}
@@ -469,6 +496,28 @@ function DepositsContent() {
           </div>
         )}
       </main>
+
+      {/* Footer */}
+      <footer className="border-t border-border-subtle">
+        <div className="container-main py-8">
+          <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
+            <img src="/logo-privylink.png" alt="PrivyLink" className="h-6" />
+            <div className="flex items-center gap-4">
+              <span className="flex items-center gap-2 text-sm">
+                <span className="status-online" />
+                <span className="text-sol-green">Devnet</span>
+              </span>
+              <span className="text-white/30">|</span>
+              <span className="text-sm text-white/70">
+                Built for <span className="text-gradient font-medium">Solana Privacy Hack 2026</span>
+              </span>
+            </div>
+          </div>
+          <p className="mt-6 text-center text-xs text-white/60">
+            Privacy is not a luxury, it's a fundamental right.
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }
@@ -478,7 +527,7 @@ function LoadingFallback() {
     <div className="min-h-screen bg-bg-primary text-foreground flex items-center justify-center">
       <div className="text-center">
         <div className="spinner mx-auto mb-4" style={{ width: "2rem", height: "2rem" }} />
-        <p className="text-muted">Loading...</p>
+        <p className="text-white/70">Loading...</p>
       </div>
     </div>
   );

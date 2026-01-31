@@ -93,6 +93,7 @@ const WALLET_OPTIONS = [
     icon: "/solflare.png",
     downloadUrl: "https://solflare.com/download",
     recommended: true,
+    detectGlobal: () => typeof window !== "undefined" && !!(window as any).solflare,
   },
   {
     id: "phantom",
@@ -100,14 +101,26 @@ const WALLET_OPTIONS = [
     icon: "/phantom.png",
     downloadUrl: "https://phantom.app/download",
     recommended: false,
+    detectGlobal: () => typeof window !== "undefined" && !!(window as any).phantom?.solana,
   },
 ];
+
+// Check if accessing from localhost or HTTPS (where extensions work)
+const isSecureContext = () => {
+  if (typeof window === "undefined") return false;
+  return window.location.hostname === "localhost" ||
+         window.location.hostname === "127.0.0.1" ||
+         window.location.protocol === "https:";
+};
 
 export default function Home() {
   const { connectors, connect, disconnect, wallet, status } =
     useWalletConnection();
 
   const address = wallet?.account.address.toString();
+
+  // State for showing network warning
+  const [showNetworkWarning, setShowNetworkWarning] = useState(false);
 
   // Helper to find connector or fallback to download
   const handleWalletClick = (walletOption: typeof WALLET_OPTIONS[0]) => {
@@ -116,14 +129,25 @@ export default function Home() {
     );
     if (connector) {
       connect(connector.id);
+    } else if (walletOption.detectGlobal()) {
+      // Extension exists but can't connect (not on localhost/HTTPS)
+      setShowNetworkWarning(true);
     } else {
-      // Wallet not detected - open download page
+      // Wallet not installed - open download page
       window.open(walletOption.downloadUrl, "_blank");
     }
   };
 
-  // Check if a wallet is available
+  // Check if a wallet is available (via connector or global detection)
   const isWalletAvailable = (walletId: string) => {
+    const viaConnector = connectors.some((c) => c.name.toLowerCase().includes(walletId));
+    const wallet = WALLET_OPTIONS.find(w => w.id === walletId);
+    const viaGlobal = wallet?.detectGlobal() ?? false;
+    return viaConnector || viaGlobal;
+  };
+
+  // Check if wallet can actually connect (connector available)
+  const canWalletConnect = (walletId: string) => {
     return connectors.some((c) => c.name.toLowerCase().includes(walletId));
   };
 
@@ -207,27 +231,43 @@ export default function Home() {
                       className="fixed inset-0 z-40"
                       onClick={() => setWalletDropdownOpen(false)}
                     />
-                    <div className="absolute right-0 top-full mt-2 z-50 w-56 rounded-lg border border-border-subtle bg-bg-primary p-2 shadow-lg">
-                      {WALLET_OPTIONS.map((walletOption) => (
-                        <button
-                          key={walletOption.id}
-                          onClick={() => {
-                            handleWalletClick(walletOption);
-                            setWalletDropdownOpen(false);
-                          }}
-                          disabled={status === "connecting"}
-                          className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm hover:bg-bg-elevated transition"
-                        >
-                          <img src={walletOption.icon} alt={walletOption.name} className="h-5 w-5" />
-                          <span>{walletOption.name}</span>
-                          {walletOption.recommended && (
-                            <span className="ml-auto text-xs text-sol-green">Recommended</span>
-                          )}
-                          {!isWalletAvailable(walletOption.id) && (
-                            <span className="ml-auto text-[10px] text-muted">Install</span>
-                          )}
-                        </button>
-                      ))}
+                    <div className="absolute right-0 top-full mt-2 z-50 w-64 rounded-lg border border-border-subtle bg-bg-primary p-2 shadow-lg">
+                      {showNetworkWarning && (
+                        <div className="mb-2 rounded-md bg-amber-500/10 border border-amber-500/30 p-3">
+                          <p className="text-xs text-amber-400 font-medium mb-1">Cannot connect via IP</p>
+                          <p className="text-[10px] text-amber-400/80">
+                            Wallet extensions only work on <strong>localhost</strong> or <strong>HTTPS</strong>.
+                            Access via localhost:3000 or deploy to connect.
+                          </p>
+                        </div>
+                      )}
+                      {WALLET_OPTIONS.map((walletOption) => {
+                        const installed = isWalletAvailable(walletOption.id);
+                        const canConnect = canWalletConnect(walletOption.id);
+                        return (
+                          <button
+                            key={walletOption.id}
+                            onClick={() => {
+                              handleWalletClick(walletOption);
+                              if (canConnect) setWalletDropdownOpen(false);
+                            }}
+                            disabled={status === "connecting"}
+                            className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm hover:bg-bg-elevated transition"
+                          >
+                            <img src={walletOption.icon} alt={walletOption.name} className="h-5 w-5" />
+                            <span>{walletOption.name}</span>
+                            {installed && !canConnect && (
+                              <span className="ml-auto text-[10px] text-amber-400">Use localhost</span>
+                            )}
+                            {!installed && (
+                              <span className="ml-auto text-[10px] text-muted">Install</span>
+                            )}
+                            {canConnect && walletOption.recommended && (
+                              <span className="ml-auto text-xs text-sol-green">Recommended</span>
+                            )}
+                          </button>
+                        );
+                      })}
                       <div className="mt-2 border-t border-border-subtle pt-2">
                         <p className="px-3 py-1 text-[10px] text-muted">Configure: Settings → Network → Devnet</p>
                       </div>
@@ -324,26 +364,44 @@ export default function Home() {
             {/* Wallet Card - Top */}
             <div className="card">
               {status !== "connected" ? (
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <h2 className="heading-3 mb-1">Connect Wallet</h2>
-                    <p className="text-xs text-muted">Settings → Network → Devnet</p>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {WALLET_OPTIONS.map((walletOption, index) => (
-                      <button
-                        key={walletOption.id}
-                        onClick={() => handleWalletClick(walletOption)}
-                        disabled={status === "connecting"}
-                        className={`${index === 0 ? 'btn-primary' : 'btn-secondary'} gap-2 py-2.5`}
-                      >
-                        <img src={walletOption.icon} alt={walletOption.name} className="h-5 w-5" />
-                        {walletOption.name}
-                        {!isWalletAvailable(walletOption.id) && (
-                          <span className="text-[10px] opacity-70">(Install)</span>
-                        )}
-                      </button>
-                    ))}
+                <div className="flex flex-col gap-4">
+                  {showNetworkWarning && (
+                    <div className="rounded-lg bg-amber-500/10 border border-amber-500/30 p-4">
+                      <p className="text-sm text-amber-400 font-medium mb-1">Cannot connect via network IP</p>
+                      <p className="text-xs text-amber-400/80">
+                        Wallet extensions only work on <strong>localhost</strong> or <strong>HTTPS</strong> domains.
+                        Please access via <a href="http://localhost:3000" className="underline">localhost:3000</a> or use the deployed version.
+                      </p>
+                    </div>
+                  )}
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <h2 className="heading-3 mb-1">Connect Wallet</h2>
+                      <p className="text-xs text-muted">Settings → Network → Devnet</p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {WALLET_OPTIONS.map((walletOption, index) => {
+                        const installed = isWalletAvailable(walletOption.id);
+                        const canConnect = canWalletConnect(walletOption.id);
+                        return (
+                          <button
+                            key={walletOption.id}
+                            onClick={() => handleWalletClick(walletOption)}
+                            disabled={status === "connecting"}
+                            className={`${index === 0 ? 'btn-primary' : 'btn-secondary'} gap-2 py-2.5`}
+                          >
+                            <img src={walletOption.icon} alt={walletOption.name} className="h-5 w-5" />
+                            {walletOption.name}
+                            {installed && !canConnect && (
+                              <span className="text-[10px] opacity-70">(Use localhost)</span>
+                            )}
+                            {!installed && (
+                              <span className="text-[10px] opacity-70">(Install)</span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               ) : (
