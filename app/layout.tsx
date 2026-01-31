@@ -33,11 +33,6 @@ export const metadata: Metadata = {
     description: "Send SOL privately via magic links on Solana.",
     creator: "@_renner_araujo",
   },
-  icons: {
-    icon: "/logo.png",
-    shortcut: "/logo.png",
-    apple: "/logo.png",
-  },
   robots: {
     index: true,
     follow: true,
