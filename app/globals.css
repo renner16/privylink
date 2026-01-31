@@ -250,28 +250,28 @@ body {
 /* --- Cards --- */
 @utility card {
   background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
+  border: 2px solid #fff;
   border-radius: var(--radius-lg);
   padding: var(--space-6);
 }
 
 @utility card-hover {
   background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
+  border: 2px solid #fff;
   border-radius: var(--radius-lg);
   padding: var(--space-6);
   transition: all var(--transition-base);
   cursor: pointer;
   &:hover {
     background: var(--bg-card-hover);
-    border-color: var(--border-default);
-    transform: translateY(-2px);
+    border-color: #fff;
+    transform: translateY(-4px);
   }
 }
 
 @utility card-glow {
   background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
+  border: 2px solid #fff;
   border-radius: var(--radius-lg);
   padding: var(--space-6);
   position: relative;
@@ -379,6 +379,13 @@ body {
   border-radius: var(--radius-md);
   outline: none;
   transition: all var(--transition-fast);
+  /* Remove number input arrows */
+  -moz-appearance: textfield;
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
   &:focus {
     border-color: var(--sol-purple);
     box-shadow: 0 0 0 3px rgba(153, 69, 255, 0.15);
@@ -517,6 +524,7 @@ body {
 @utility animated-border {
   position: relative;
   background: var(--bg-card);
+  border: 2px solid #fff;
   border-radius: var(--radius-lg);
   &::before {
     content: "";
@@ -584,4 +592,22 @@ body {
 
 .animate-pulse {
   animation: pulse 2s ease-in-out infinite;
+}
+
+/* Typewriter Effect */
+.typewriter-text {
+  display: inline;
+}
+
+.typewriter-cursor {
+  display: inline-block;
+  margin-left: 2px;
+  animation: blink 0.7s step-end infinite;
+  color: var(--sol-green);
+  font-weight: 400;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
 }
