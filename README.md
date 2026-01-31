@@ -211,7 +211,7 @@ Competing for:
   
   X: https://x.com/_renner_araujo
 
-- **Giovana Marques**
+- **Geovana Marques**
 
 ---
 
