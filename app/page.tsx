@@ -307,24 +307,28 @@ export default function Home() {
                       {WALLET_OPTIONS.map((walletOption) => {
                         const installed = isWalletAvailable(walletOption.id);
                         const canConnect = canWalletConnect(walletOption.id);
+                        const isAvailable = installed || canConnect;
                         return (
                           <button
                             key={walletOption.id}
-                            onClick={() => {
-                              handleWalletClick(walletOption);
+                            onClick={async () => {
+                              if (isAvailable) {
+                                setWalletDropdownOpen(false);
+                              }
+                              await handleWalletClick(walletOption);
                             }}
                             disabled={status === "connecting"}
                             className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm hover:bg-bg-elevated transition"
                           >
                             <img src={walletOption.icon} alt={walletOption.name} className="h-5 w-5" />
                             <span>{walletOption.name}</span>
-                            {(installed || canConnect) && walletOption.recommended && (
+                            {isAvailable && walletOption.recommended && (
                               <span className="ml-auto text-xs text-sol-green">Recommended</span>
                             )}
-                            {(installed || canConnect) && !walletOption.recommended && (
+                            {isAvailable && !walletOption.recommended && (
                               <span className="ml-auto text-xs text-sol-green">Connect</span>
                             )}
-                            {!installed && !canConnect && (
+                            {!isAvailable && (
                               <span className="ml-auto text-[10px] text-muted">Install</span>
                             )}
                           </button>
