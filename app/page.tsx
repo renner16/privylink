@@ -118,11 +118,13 @@ export default function Home() {
   // State for connection errors
   const [connectionError, setConnectionError] = useState<string | null>(null);
 
-  // State for detected wallets (client-side only to avoid hydration mismatch)
+  // State for client-side detection (avoids hydration mismatch)
+  const [isClient, setIsClient] = useState(false);
   const [detectedWallets, setDetectedWallets] = useState<Record<string, boolean>>({});
 
-  // Detect wallets on client-side only
+  // Mark as client-side and detect wallets
   useEffect(() => {
+    setIsClient(true);
     const detected: Record<string, boolean> = {};
     WALLET_OPTIONS.forEach(wallet => {
       detected[wallet.id] = wallet.detectGlobal();
@@ -187,9 +189,15 @@ export default function Home() {
     }
   };
 
-  // Check if a wallet is available (via connector or global detection)
+  // Check if a wallet is available (via connector or global detection in real-time)
   const isWalletAvailable = (walletId: string) => {
     const viaConnector = connectors.some((c) => c.name.toLowerCase().includes(walletId));
+    // Real-time detection only on client-side to avoid hydration mismatch
+    if (isClient) {
+      const walletOption = WALLET_OPTIONS.find(w => w.id === walletId);
+      const directDetection = walletOption?.detectGlobal() || false;
+      return viaConnector || directDetection;
+    }
     return viaConnector || detectedWallets[walletId];
   };
 
