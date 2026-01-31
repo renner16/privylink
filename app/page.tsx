@@ -85,6 +85,37 @@ function TypewriterText({ texts, speed = 100, deleteSpeed = 50, pauseDuration = 
   );
 }
 
+// Detect if running on mobile device
+const isMobileDevice = () => {
+  if (typeof window === "undefined") return false;
+  const ua = navigator.userAgent || navigator.vendor || (window as any).opera;
+  return /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(ua.toLowerCase());
+};
+
+// Detect if running inside a wallet's in-app browser
+const isInWalletBrowser = () => {
+  if (typeof window === "undefined") return false;
+  // Se já tem a carteira injetada, estamos no browser da carteira
+  return !!(window as any).solflare || !!(window as any).phantom?.solana;
+};
+
+// Generate deep link to open current page in wallet's browser
+const getWalletDeepLink = (walletId: string): string | null => {
+  if (typeof window === "undefined") return null;
+  const currentUrl = encodeURIComponent(window.location.href);
+
+  switch (walletId) {
+    case "phantom":
+      // Phantom Universal Link - abre no app se instalado, senão redireciona para store
+      return `https://phantom.app/ul/browse/${currentUrl}`;
+    case "solflare":
+      // Solflare Universal Link
+      return `https://solflare.com/ul/v1/browse/${currentUrl}`;
+    default:
+      return null;
+  }
+};
+
 // Wallet definitions for fallback when extensions aren't detected
 const WALLET_OPTIONS = [
   {
@@ -185,7 +216,20 @@ export default function Home() {
         }
       }
     } else {
-      // Wallet not installed - open download page
+      // Wallet not detected - check if mobile
+      const isMobile = isMobileDevice();
+      const inWalletBrowser = isInWalletBrowser();
+
+      if (isMobile && !inWalletBrowser) {
+        // Mobile + navegador externo = usar deep link para abrir no browser da carteira
+        const deepLink = getWalletDeepLink(walletOption.id);
+        if (deepLink) {
+          window.location.href = deepLink;
+          return;
+        }
+      }
+
+      // Desktop sem extensão ou fallback = abrir página de download
       window.open(walletOption.downloadUrl, "_blank");
     }
   };
