@@ -54,8 +54,18 @@ function timeRemaining(expiresAt: number): string {
   return `${mins}m`;
 }
 
+// Porcentagem de tempo restante para barra de progresso
+function timeProgress(createdAt: number, expiresAt: number): number {
+  if (expiresAt === 0) return 100;
+  const now = Math.floor(Date.now() / 1000);
+  const total = expiresAt - createdAt;
+  const elapsed = now - createdAt;
+  const remaining = Math.max(0, 100 - (elapsed / total) * 100);
+  return remaining;
+}
+
 export default function RefundPage() {
-  const { wallet, status } = useWalletConnection();
+  const { wallet, status, connectors, connect } = useWalletConnection();
   const { send, isSending } = useSendTransaction();
 
   const [expiredDeposits, setExpiredDeposits] = useState<StoredDeposit[]>([]);
@@ -148,7 +158,7 @@ export default function RefundPage() {
       let msg = err?.message || "Erro desconhecido";
 
       if (msg.includes("AlreadyClaimed") || msg.includes("0x1770")) {
-        msg = "Ja foi resgatado/reembolsado!";
+        msg = "Já foi resgatado/reembolsado!";
         // Remover do localStorage
         const stored: StoredDeposit[] = JSON.parse(
           localStorage.getItem("privylink_deposits") || "[]"
@@ -159,9 +169,9 @@ export default function RefundPage() {
         );
         loadDeposits();
       } else if (msg.includes("NotExpiredYet") || msg.includes("0x1774")) {
-        msg = "Ainda nao expirou!";
+        msg = "Ainda não expirou!";
       } else if (msg.includes("AccountNotFound")) {
-        msg = "Deposito nao encontrado.";
+        msg = "Depósito não encontrado.";
       }
 
       setTxStatus(`❌ ${msg}`);
@@ -185,16 +195,64 @@ export default function RefundPage() {
   // Não conectado
   if (status !== "connected") {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-bg-primary relative">
+        {/* Background Effects */}
+        <div className="hero-glow" />
+        <div className="fixed inset-0 grid-pattern opacity-30 pointer-events-none" />
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-sol-purple/15 rounded-full blur-[120px]" />
+          <div className="floating-orb-purple w-[500px] h-[500px] top-[-20%] left-[-10%]" />
         </div>
+
         <div className="relative z-10 max-w-xl mx-auto px-6 py-12">
           <Link href="/" className="btn-ghost inline-flex items-center gap-2 mb-8">← Voltar</Link>
+
           <div className="glass-card p-8 text-center">
-            <div className="text-5xl mb-4">📋</div>
-            <h1 className="text-2xl font-bold mb-4 text-gradient">Meus Depósitos</h1>
-            <p className="text-muted">Conecte sua wallet para ver seus depósitos.</p>
+            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-sol-purple to-sol-green flex items-center justify-center text-4xl mx-auto mb-4 glow-purple">
+              📋
+            </div>
+            <h1 className="text-3xl font-bold mb-4 text-gradient">Meus Depósitos</h1>
+            <p className="text-muted mb-8">Conecte sua wallet para ver seus depósitos</p>
+
+            <div className="space-y-4">
+              {/* Solflare destacado */}
+              {(() => {
+                const solflareConnector = connectors.find(
+                  (c) => c.name.toLowerCase().includes("solflare")
+                );
+                if (solflareConnector) {
+                  return (
+                    <button
+                      onClick={() => connect(solflareConnector.id)}
+                      className="btn-primary w-full flex items-center justify-center gap-3"
+                    >
+                      <span className="text-xl">🔥</span>
+                      <span>Conectar com Solflare</span>
+                    </button>
+                  );
+                }
+                return null;
+              })()}
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                {connectors
+                  .filter(
+                    (c) =>
+                      !c.name.toLowerCase().includes("solflare") &&
+                      !c.name.toLowerCase().includes("metamask") &&
+                      !c.name.toLowerCase().includes("brave")
+                  )
+                  .slice(0, 4)
+                  .map((connector) => (
+                    <button
+                      key={connector.id}
+                      onClick={() => connect(connector.id)}
+                      className="btn-secondary"
+                    >
+                      {connector.name}
+                    </button>
+                  ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -204,65 +262,111 @@ export default function RefundPage() {
   const hasDeposits = expiredDeposits.length > 0 || activeDeposits.length > 0;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-bg-primary relative">
+      {/* Background Effects */}
+      <div className="hero-glow" />
+      <div className="fixed inset-0 grid-pattern opacity-30 pointer-events-none" />
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-sol-purple/15 rounded-full blur-[120px]" />
+        <div className="floating-orb-purple w-[500px] h-[500px] top-[-20%] left-[-10%]" />
+        <div className="floating-orb-green w-[300px] h-[300px] bottom-[-10%] right-[10%]" style={{ animationDelay: '-4s' }} />
       </div>
 
       <div className="relative z-10 max-w-xl mx-auto px-6 py-12 space-y-6">
         <Link href="/" className="btn-ghost inline-flex items-center gap-2">← Voltar</Link>
 
+        {/* Header */}
         <div className="glass-card p-6">
-          <h1 className="text-2xl font-bold mb-2 text-gradient">Meus Depósitos</h1>
-          <p className="text-sm text-muted">Acompanhe e gerencie seus depósitos.</p>
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-sol-purple to-sol-green flex items-center justify-center text-2xl glow-purple">
+              📋
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gradient">Meus Depósitos</h1>
+              <p className="text-sm text-muted">Acompanhe e gerencie seus depósitos</p>
+            </div>
+          </div>
         </div>
+
+        {/* Stats */}
+        {hasDeposits && (
+          <div className="grid grid-cols-2 gap-4">
+            <div className="glass-card p-4 text-center">
+              <p className="text-3xl font-bold text-sol-green">{activeDeposits.length}</p>
+              <p className="text-xs text-muted">Ativos</p>
+            </div>
+            <div className="glass-card p-4 text-center">
+              <p className="text-3xl font-bold text-sol-purple">{expiredDeposits.length}</p>
+              <p className="text-xs text-muted">Expirados</p>
+            </div>
+          </div>
+        )}
 
         {/* Depósitos Ativos */}
         {activeDeposits.length > 0 && (
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-sol-green animate-pulse" />
-              <p className="text-sm font-medium">Em andamento ({activeDeposits.length})</p>
+              <span className="status-dot-green" />
+              <p className="font-semibold">Em andamento ({activeDeposits.length})</p>
             </div>
 
             {activeDeposits.map((d) => (
-              <div key={d.depositId} className="glass-card p-5 space-y-3">
+              <div key={d.depositId} className="glass-card glass-card-green p-5 space-y-4">
                 <div className="flex justify-between items-start">
                   <div>
-                    <p className="text-2xl font-bold text-sol-green">{d.amount} SOL</p>
-                    <p className="text-xs text-muted font-mono">ID: {d.depositId.slice(0, 15)}...</p>
+                    <p className="text-3xl font-bold text-sol-green">{d.amount} SOL</p>
+                    <p className="text-xs text-muted-dark font-mono mt-1">ID: {d.depositId.slice(0, 15)}...</p>
                   </div>
-                  <span className="badge-green text-xs">
-                    {d.expiresAt === 0 ? "Sem expiração" : timeRemaining(d.expiresAt)}
+                  <span className="badge-green">
+                    {d.expiresAt === 0 ? "♾️ Sem expiração" : `⏱️ ${timeRemaining(d.expiresAt)}`}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 text-xs text-muted">
-                  <div>
-                    <p>Criado</p>
-                    <p className="text-foreground">{new Date(d.createdAt * 1000).toLocaleString()}</p>
+                {/* Progress bar */}
+                {d.expiresAt > 0 && (
+                  <div className="space-y-1">
+                    <div className="h-1.5 bg-bg-secondary rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-sol-green to-sol-blue rounded-full transition-all"
+                        style={{ width: `${timeProgress(d.createdAt, d.expiresAt)}%` }}
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <p>Expira</p>
-                    <p className="text-foreground">
-                      {d.expiresAt === 0 ? "Nunca" : new Date(d.expiresAt * 1000).toLocaleString()}
+                )}
+
+                <div className="grid grid-cols-2 gap-4 text-xs">
+                  <div className="card-section">
+                    <p className="text-muted-dark mb-1">Criado</p>
+                    <p className="font-medium">{new Date(d.createdAt * 1000).toLocaleDateString()}</p>
+                  </div>
+                  <div className="card-section">
+                    <p className="text-muted-dark mb-1">Expira</p>
+                    <p className="font-medium">
+                      {d.expiresAt === 0 ? "Nunca" : new Date(d.expiresAt * 1000).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => copyMagicLink(d)}
-                    className="btn-secondary flex-1 text-sm"
-                  >
-                    {copiedId === d.depositId ? "✅ Copiado!" : "📋 Copiar Link"}
-                  </button>
-                </div>
+                <button
+                  onClick={() => copyMagicLink(d)}
+                  className="btn-secondary w-full flex items-center justify-center gap-2"
+                >
+                  {copiedId === d.depositId ? (
+                    <>
+                      <span>✅</span>
+                      <span>Copiado!</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>📋</span>
+                      <span>Copiar Magic Link</span>
+                    </>
+                  )}
+                </button>
 
-                <p className="text-xs text-muted text-center">
+                <p className="text-xs text-muted-dark text-center">
                   {d.expiresAt === 0
-                    ? "Sem expiração - não pode ser reembolsado"
-                    : "Se não for claimado, você poderá recuperar após expirar"
+                    ? "⚠️ Sem expiração - não pode ser reembolsado"
+                    : "💡 Se não for resgatado, você poderá recuperar após expirar"
                   }
                 </p>
               </div>
@@ -272,38 +376,43 @@ export default function RefundPage() {
 
         {/* Depósitos Expirados */}
         {expiredDeposits.length > 0 && (
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-red-400" />
-              <p className="text-sm font-medium">Expirados ({expiredDeposits.length})</p>
+              <span className="status-dot-red" />
+              <p className="font-semibold">Expirados ({expiredDeposits.length})</p>
             </div>
 
             {expiredDeposits.map((d) => (
-              <div key={d.depositId} className="glass-card p-5 space-y-3 border-red-500/20">
+              <div key={d.depositId} className="glass-card glass-card-purple p-5 space-y-4">
                 <div className="flex justify-between items-start">
                   <div>
-                    <p className="text-2xl font-bold text-sol-green">{d.amount} SOL</p>
-                    <p className="text-xs text-muted font-mono">ID: {d.depositId.slice(0, 15)}...</p>
+                    <p className="text-3xl font-bold text-sol-green">{d.amount} SOL</p>
+                    <p className="text-xs text-muted-dark font-mono mt-1">ID: {d.depositId.slice(0, 15)}...</p>
                   </div>
-                  <span className="badge-purple text-xs">Expirado</span>
+                  <span className="badge-purple">⏰ Expirado</span>
                 </div>
 
-                <div className="text-xs text-muted">
-                  <p>Expirou em <span className="text-red-400">{new Date(d.expiresAt * 1000).toLocaleString()}</span></p>
+                <div className="card-section border-red-500/20 bg-red-500/5">
+                  <p className="text-xs text-red-400">
+                    Expirou em <span className="font-semibold">{new Date(d.expiresAt * 1000).toLocaleString()}</span>
+                  </p>
                 </div>
 
                 <button
                   onClick={() => handleRefund(d.depositId)}
                   disabled={isSending}
-                  className="btn-primary w-full"
+                  className="btn-primary w-full flex items-center justify-center gap-2"
                 >
                   {refundingId === d.depositId ? (
-                    <span className="flex items-center justify-center gap-2">
+                    <>
                       <span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
-                      Processando...
-                    </span>
+                      <span>Processando...</span>
+                    </>
                   ) : (
-                    "🔄 Recuperar SOL"
+                    <>
+                      <span>🔄</span>
+                      <span>Recuperar SOL</span>
+                    </>
                   )}
                 </button>
               </div>
@@ -314,26 +423,34 @@ export default function RefundPage() {
         {/* Sem depósitos */}
         {!hasDeposits && (
           <div className="glass-card p-8 text-center">
-            <div className="text-4xl mb-3">📭</div>
-            <p className="font-semibold mb-1">Nenhum depósito</p>
-            <p className="text-sm text-muted mb-4">Depósitos criados neste navegador aparecerão aqui.</p>
-            <Link href="/send" className="btn-primary inline-block">
-              Criar depósito
+            <div className="text-5xl mb-4">📭</div>
+            <p className="text-xl font-bold mb-2">Nenhum depósito</p>
+            <p className="text-sm text-muted mb-6">Depósitos criados neste navegador aparecerão aqui</p>
+            <Link href="/send" className="btn-primary inline-flex items-center gap-2">
+              <span>🚀</span>
+              <span>Criar depósito</span>
             </Link>
           </div>
         )}
 
         {/* Input manual */}
-        <div className="glass-card p-5 space-y-3">
-          <p className="text-sm font-medium">Refund manual</p>
-          <p className="text-xs text-muted">Criou em outro dispositivo? Insira o Deposit ID:</p>
+        <div className="glass-card p-5 space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-sol-blue/15 border border-sol-blue/30 flex items-center justify-center">
+              <span>🔧</span>
+            </div>
+            <div>
+              <p className="font-semibold">Refund Manual</p>
+              <p className="text-xs text-muted">Criou em outro dispositivo? Insira o Deposit ID</p>
+            </div>
+          </div>
           <div className="flex gap-2">
             <input
               type="text"
               placeholder="Deposit ID"
               value={manualId}
               onChange={(e) => setManualId(e.target.value)}
-              className="input flex-1 text-sm"
+              className="input flex-1 font-mono text-sm"
             />
             <button
               onClick={() => manualId && handleRefund(manualId)}
@@ -348,20 +465,27 @@ export default function RefundPage() {
         {/* Status */}
         {txStatus && (
           <div className={`glass-card p-4 text-sm whitespace-pre-line ${
-            txStatus.includes("✅") ? "text-sol-green" : "text-red-400"
+            txStatus.includes("✅") ? "border-sol-green/30 text-sol-green" : "border-red-500/30 text-red-400"
           }`}>
             {txStatus}
           </div>
         )}
 
         {/* Info */}
-        <div className="glass-card p-5 text-xs text-muted space-y-2">
-          <p className="font-medium text-foreground">Info:</p>
-          <ul className="space-y-1">
-            <li>• Depósitos ativos podem ser resgatados pelo destinatário</li>
-            <li>• Após expirar, só você pode recuperar os fundos</li>
-            <li>• Depósitos sem expiração nunca podem ser reembolsados</li>
-          </ul>
+        <div className="glass-card p-5">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 rounded-xl bg-sol-purple/15 border border-sol-purple/30 flex items-center justify-center flex-shrink-0">
+              <span>💡</span>
+            </div>
+            <div>
+              <p className="font-semibold mb-2">Como funciona:</p>
+              <ul className="space-y-1 text-sm text-muted">
+                <li>• Depósitos ativos podem ser resgatados pelo destinatário</li>
+                <li>• Após expirar, só você pode recuperar os fundos</li>
+                <li>• Depósitos sem expiração nunca podem ser reembolsados</li>
+              </ul>
+            </div>
+          </div>
         </div>
       </div>
     </div>
