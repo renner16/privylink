@@ -2,357 +2,210 @@
 
 **Private SOL transfers via Magic Links on Solana**
 
-[Live Demo](https://privylink.vercel.app/) · [Solana Devnet](https://explorer.solana.com/address/98WwJxc1aAeqGWuaouQntJYmdQEnELntf9BqKXD3o34W?cluster=devnet) · [MIT License](LICENSE)
+🌐 Live Demo: https://privylink.vercel.app
+📜 Program ID (Devnet): https://explorer.solana.com/address/98WwJxc1aAeqGWuaouQntJYmdQEnELntf9BqKXD3o34W?cluster=devnet
 
-> Built for **Solana Privacy Hack 2026**
+Built for **Solana Privacy Hack 2026**
 
 ---
 
 ## Overview
 
-PrivyLink enables private SOL transfers without creating a direct on-chain link between sender and receiver. Using shareable magic links and secret codes, users can send funds with true privacy.
+PrivyLink enables **private SOL transfers** without creating a direct on-chain link between sender and receiver.
 
-**Live Demo:** [privylink.vercel.app](https://privylink.vercel.app/)
+Instead of sending funds wallet-to-wallet, users deposit SOL into a **temporary vault (PDA)** and share a **magic link + secret code**.
+The receiver claims funds by proving knowledge of the secret — preserving **relationship privacy** on-chain.
 
-### TL;DR (60 seconds)
+> Not ZK. Not fully anonymous — intentionally.
+> PrivyLink prioritizes **simplicity, UX, and practical privacy** over complex cryptography.
 
-- **Send SOL** → get a magic link + secret code
-- **Share** link + secret with receiver
-- **Receiver claims** by proving knowledge of secret
-- **No sender ↔ receiver link on-chain**
-- **Manual refund** available if deposit expires unclaimed
+---
 
-> **Not ZK, not fully anonymous — intentionally.** We prioritize simplicity and UX over complex cryptography. Relationship privacy without the overhead.
+## TL;DR (60 seconds)
+
+- Send SOL → get a magic link + secret code
+- Share link + secret with receiver
+- Receiver claims by proving knowledge of secret
+- No sender ↔ receiver link on-chain
+- Manual refund available if deposit expires unclaimed
 
 ---
 
 ## How It Works
 
-```
-┌─────────────┐      ┌─────────────┐      ┌─────────────┐
-│   Sender    │ ───▶ │  Vault PDA  │ ───▶ │  Receiver   │
-└─────────────┘      └─────────────┘      └─────────────┘
-       │                    │                    │
-       │  Deposits SOL      │  Temporary hold    │  Proves secret
-       │  + claim_hash      │  No direct link    │  Receives SOL
-```
+Sender ──▶ Vault PDA ──▶ Receiver
 
-### Step 1: Create Deposit
-Sender deposits SOL and receives:
-- **Magic Link** (URL with deposit parameters)
-- **Secret Code** (required to claim)
-- **QR Code** (scannable, expandable, downloadable)
 
-### Step 2: Share
-Send the magic link to the receiver via any channel.
-> Pro tip: Send link and secret through different channels for extra security
+1. **Create Deposit**
+   Sender deposits SOL and receives:
+   - Magic Link (URL)
+   - Secret Code
+   - QR Code (expandable & downloadable)
 
-### Step 3: Claim
-Receiver opens the link, enters the secret code, and claims the SOL.
+2. **Share**
+   Send link and secret to the receiver
+   *(Tip: use different channels for extra security)*
 
-### Step 4: Expiration (Optional)
-If unclaimed, sender can manually refund after expiration (1 hour to 30 days).
+3. **Claim**
+   Receiver opens the link, enters the secret, and claims the SOL
+
+4. **Expiration (Optional)**
+   If unclaimed, sender can manually refund after expiration (1h–30d)
+
+---
+
+## Screenshots
+
+### Landing Page (Desktop)
+![Landing Hero](screenshots/hero-desktop.png)
+
+### Create Deposit (Desktop)
+![Send Form](screenshots/send-form-desktop.png)
+
+### Deposit Success (Desktop)
+![Send Success](screenshots/send-success-desktop.png)
+
+### Claim Transfer
+**Desktop**
+![Claim Desktop](screenshots/claim-desktop.png)
+
+**Mobile**
+![Claim Mobile](screenshots/claim-mobile.png)
+
+### Create Deposit (Mobile)
+![Send Mobile](screenshots/send-mobile.png)
+
+### Dashboard — My Transfers
+![Dashboard](screenshots/dashboard-desktop.png)
 
 ---
 
 ## Features
 
-### Core Features
-- **Private Transfers** - No direct wallet-to-wallet link on-chain
-- **Magic Links** - Share via URL or QR Code
-- **Secret Codes** - Receiver proves knowledge to claim
-- **Configurable Expiration** - 1 hour to 30 days
-- **Manual Refund** - Sender can recover expired deposits on demand
+### Core
+- Private transfers (no wallet-to-wallet link)
+- Magic links (URL + QR code)
+- Secret-based claims (SHA-256 hash verification)
+- Configurable expiration (1h to 30 days)
+- Manual refund for expired deposits
 
-### UX Features
-- **Wallet Balance Display** - See your balance before sending
-- **Balance Validation** - Prevents insufficient balance errors
-- **Secret Strength Indicator** - Visual feedback (Weak/Medium/Strong)
-- **QR Code Modal** - Enlarge and download as PNG
-- **Optional Labels** - Name your transfers (stored locally)
-- **Local History** - Track deposits and claims in browser
-- **History Settings** - Toggle save history on/off, clear all
-- **Explorer Links** - Quick access to Solana Explorer for each transaction
-
-### Mobile Support
-- **Deep Links** - Open magic links in wallet's in-app browser (Phantom/Solflare)
-- **Web Share API** - Native share menu for QR code on mobile
-- **Responsive Design** - Optimized for all screen sizes
-- **Clear Error Messages** - Portuguese error messages for common issues:
-  - Insufficient balance for network fees
-  - Wrong network (Mainnet vs Devnet)
-  - Transaction cancelled/expired
+### UX & Mobile
+- Wallet balance display and validation
+- Secret strength indicator
+- QR code enlarge & download
+- Local transfer history (browser only)
+- Explorer links for every transaction
+- Loading overlay during transactions
+- Mobile deep links (Phantom & Solflare in-app browser)
+- Web Share API for QR codes on mobile
+- Clear error messages (wrong network, low balance, expired deposit)
 
 ### Dashboard (My Transfers)
-- **Deposits Tab** - View all deposits with status (Active/Expired/Claimed)
-- **Claims Tab** - View received transfers with SOL amounts
-- **Stats Overview** - Total, Active, Expired, Completed counts
-- **SOL Tracking** - Total SOL locked and received
-- **Refund Button** - One-click refund for expired deposits
-
----
-
-## Tech Stack
-
-| Layer | Technology |
-|-------|------------|
-| Smart Contract | Solana (Anchor Framework) |
-| Frontend | Next.js + TypeScript |
-| Styling | Tailwind CSS |
-| RPC Provider | [Helius](https://www.helius.dev/) |
-| Deployment | Vercel |
-| Network | Devnet |
-
----
-
-## Smart Contract
-
-**Program ID:** [`98WwJxc1aAeqGWuaouQntJYmdQEnELntf9BqKXD3o34W`](https://explorer.solana.com/address/98WwJxc1aAeqGWuaouQntJYmdQEnELntf9BqKXD3o34W?cluster=devnet)
-
-### Program Interface
-
-| Function | Parameters | Description |
-|----------|------------|-------------|
-| `create_private_deposit` | amount, claim_hash, expiration_hours | Creates deposit with expiration |
-| `claim_deposit` | deposit_id, secret | Claims with secret code |
-| `refund_expired` | deposit_id | Manual refund after expiration |
-
-### Account Structure
-
-```rust
-pub struct PrivateDeposit {
-    pub depositor: Pubkey,      // 32 bytes - Sender's wallet
-    pub claim_hash: [u8; 32],   // SHA256 of secret code
-    pub amount: u64,            // Amount in lamports
-    pub claimed: bool,          // Claim/refund status
-    pub bump: u8,               // PDA bump seed
-    pub created_at: i64,        // Creation timestamp
-    pub expires_at: i64,        // Expiration timestamp
-}
-```
-
-### Error Codes
-
-| Code | Name | Description |
-|------|------|-------------|
-| 6000 | AlreadyClaimed | Deposit was already claimed or refunded |
-| 6001 | InvalidSecret | Secret code doesn't match claim_hash |
-| 6002 | InvalidAmount | Amount is below minimum (0.001605 SOL) |
-| 6003 | DepositExpired | Cannot claim after expiration |
-| 6004 | NotExpiredYet | Cannot refund before expiration |
-| 6005 | Unauthorized | Only depositor can refund |
+- Deposits & Claims tabs
+- Status tracking (Active / Expired / Claimed)
+- SOL totals (locked & received)
+- One-click refund for expired deposits
 
 ---
 
 ## Privacy Model
 
-PrivyLink provides **relationship privacy** through intermediary vaults:
+PrivyLink provides **relationship privacy** using intermediary vaults:
 
-1. **Sender → Vault**: Sender deposits to a PDA (not receiver's wallet)
-2. **Vault → Receiver**: Receiver claims by proving secret knowledge
-3. **No Direct Link**: On-chain, there's no transaction between sender and receiver
+- Sender deposits into a PDA (not receiver wallet)
+- Receiver claims by proving secret knowledge
+- No direct sender ↔ receiver transaction on-chain
 
-**What's Private:**
-- Receiver's identity (from sender's perspective on-chain)
-- Direct sender-receiver relationship
+**Private**
+- Sender–receiver relationship
+- Receiver identity (from sender's on-chain view)
 
-**What's Public:**
-- Deposit amounts
-- Vault addresses
-- Claim transactions
+**Public**
+- Deposit amount
+- Vault address
+- Claim transaction
 
-> **Note:** Vault PDAs are derived from depositor + unique ID. They are not publicly indexable by sender-receiver relationship, as the receiver is never stored on-chain.
+Vault PDAs are derived from depositor + unique ID.
+Receiver data is **never stored on-chain**.
 
 ---
 
 ## Why PrivyLink?
 
 | Feature | PrivyLink | ZK-based Solutions |
-|---------|-----------|-------------------|
-| Setup complexity | Simple | Complex ZK circuits |
-| User experience | Magic links + QR | Wallet-to-wallet |
-| Gas costs | Low (single tx) | High (ZK verification) |
-| Privacy level | Relationship privacy | Full anonymity |
-| Time to integrate | Minutes | Days/weeks |
+|------|---------|------------------|
+| Setup | Simple | Complex |
+| UX | Magic links + QR | Wallet-to-wallet |
+| Gas | Low (single tx) | High |
+| Privacy | Relationship privacy | Full anonymity |
+| Time to build | Minutes | Days/weeks |
 
-**Our approach:** Hash-based verification with SHA-256. No complex ZK proofs, no trusted setup, no heavy cryptography. Simple, auditable, and effective for everyday private transfers.
+**Our approach:** hash-based verification with SHA-256.
+No ZK circuits, no trusted setup, no heavy cryptography.
 
-> "Privacy doesn't have to be complicated."
+> *Privacy doesn't have to be complicated.*
+
+---
+
+## Tech Stack
+
+- **Smart Contract:** Solana (Anchor)
+- **Frontend:** Next.js + TypeScript
+- **Styling:** Tailwind CSS
+- **RPC:** Helius
+- **Deployment:** Vercel
+- **Network:** Devnet
 
 ---
 
 ## Roadmap
 
-### Phase 1 - MVP (Complete)
-- [x] Private deposits with secret codes
-- [x] Magic links with QR codes
-- [x] QR code download as PNG
-- [x] Configurable expiration (1h to 30 days)
-- [x] Manual refund for expired deposits
-- [x] My Transfers dashboard (Deposits + Claims)
-- [x] Wallet balance display and validation
-- [x] Secret strength indicator
-- [x] Optional labels for transfers
-- [x] Local history with settings
-- [x] Explorer links for all transactions
-- [x] Devnet deployment
-- [x] **Mobile deep links** (Phantom/Solflare in-app browser)
-- [x] **Mobile QR download** (Web Share API + fallback)
-- [x] **Balance check before claim** (prevents failed transactions)
-- [x] **Clear error messages** (insufficient funds, wrong network)
+### Phase 1 — MVP (Complete)
+- Private deposits & secret claims
+- Magic links + QR codes
+- Manual refunds
+- Dashboard (Deposits & Claims)
+- Mobile deep links & QR sharing
+- Balance checks & clear errors
+- Devnet deployment
 
-### Phase 2 - Enhanced Privacy (Planned)
-- [ ] Arcium MPC integration
-- [ ] Encrypted metadata
-- [ ] Stealth addresses
+### Phase 2 — Enhanced Privacy
+- Arcium MPC
+- Encrypted metadata
+- Stealth addresses
 
-### Phase 3 - Production
-- [ ] Mainnet deployment
-- [ ] Platform fee (0.25%)
-- [ ] Multi-token support (SPL tokens)
-- [ ] Batch transfers
-- [ ] Mobile app
-
----
-
-## Local Development
-
-### Prerequisites
-- Node.js 18+
-- Solana CLI
-- Anchor Framework
-
-### Setup
-
-```bash
-# Clone repository
-git clone https://github.com/renner16/privylink.git
-cd privylink
-
-# Install dependencies
-npm install
-
-# Run development server
-npm run dev
-
-# Open browser
-open http://localhost:3000
-```
-
-### Build
-
-```bash
-npm run build
-```
-
-### Deploy Contract (Devnet)
-
-```bash
-cd anchor
-anchor build
-anchor deploy --provider.cluster devnet
-```
-
----
-
-## Testing
-
-Configure your wallet for **Devnet**:
-- Phantom: Settings → Developer Settings → Testnet Mode
-- Solflare: Settings → Network → Devnet
-
-Get devnet SOL: [faucet.solana.com](https://faucet.solana.com/)
-
-### Test Flow (Desktop)
-
-1. **Connect wallet** (Solflare or Phantom on Devnet)
-2. **Create deposit** with 0.01 SOL, set expiration
-3. **Copy magic link** or scan QR code
-4. **Open in new tab/device**, connect different wallet
-5. **Enter secret code** and claim
-6. **Check My Transfers** - deposit shows as "Claimed"
-
-### Test Flow (Mobile)
-
-1. **Open magic link** in external browser (Brave, Chrome, Safari)
-2. **Click "Connect Wallet"** → selects Phantom or Solflare
-3. **App opens automatically** with in-app browser loading the page
-4. **Claim data preserved** → depositor, deposit ID, and secret are pre-filled
-5. **Connect and claim** directly from wallet's browser
-
-> **Note:** When accessing from external mobile browser, clicking a wallet button opens the wallet app's in-app browser with all claim parameters preserved.
-
----
-
-## Project Structure
-
-```
-privylink/
-├── app/                    # Next.js frontend
-│   ├── components/         # React components
-│   │   └── vault-card.tsx  # Main deposit/claim card
-│   ├── deposits/           # My Transfers page
-│   ├── generated/          # Codama-generated client
-│   └── page.tsx            # Landing page
-├── anchor/                 # Solana program
-│   └── programs/vault/     # Anchor smart contract
-│       └── src/lib.rs      # Contract logic
-├── public/                 # Static assets
-│   ├── logo-privylink.png  # Logo
-│   ├── solflare.png        # Wallet icons
-│   └── phantom.png
-└── README.md
-```
-
----
-
-## Screenshots
-
-### Create Deposit
-- Amount input with wallet balance
-- Secret code with strength indicator
-- Expiration selector
-- Optional label
-
-### Success State
-- QR Code (click to enlarge, download as PNG)
-- Complete magic link
-- Deposit details for manual sharing
-
-### My Transfers
-- Deposits tab with refund option
-- Claims tab with SOL received
-- Settings to manage local history
+### Phase 3 — Production
+- Mainnet
+- Platform fee (0.25%)
+- SPL token support
+- Batch transfers
+- Mobile app
 
 ---
 
 ## Hackathon
 
-**[Solana Privacy Hack 2026](https://solana.com/pt/privacyhack)** — $100,000+ Prize Pool
+**Solana Privacy Hack 2026**
+https://solana.com/pt/privacyhack
 
 Competing for:
-- **Private Payments Track** - $15,000
-- **Helius Bounty** - $5,000 *(using Helius RPC)*
-
-🔗 [solana.com/pt/privacyhack](https://solana.com/pt/privacyhack)
+- Private Payments Track — $15,000
+- Helius Bounty — $5,000
 
 ---
 
-## Author
+## Authors
 
-**renner16**
+- **Renner Oliveira**
+  GitHub: https://github.com/renner16
+  X: https://x.com/_renner_araujo
 
-- GitHub: [@renner16](https://github.com/renner16)
-- X: [@_renner_araujo](https://x.com/_renner_araujo)
+- **Giovana Marques**
 
 ---
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
+MIT License — see `LICENSE` file for details.
 
----
-
-<p align="center">
-  <i>Privacy is not a luxury, it's a fundamental right.</i>
-</p>
+> Privacy is not a luxury. It's a fundamental right.
