@@ -68,7 +68,7 @@ export default function ClaimPage() {
       const decoded = decodeMagicLink(code);
       setLinkData(decoded);
       if (!decoded) {
-        setTxStatus("Link invalido. Verifique se copiou corretamente.");
+        setTxStatus("Link inválido. Verifique se copiou corretamente.");
       }
     }
   }, [code]);
@@ -81,7 +81,7 @@ export default function ClaimPage() {
 
       const depositId = BigInt(linkData.depositId);
 
-      console.log("Resgatando deposito:", {
+      console.log("Resgatando depósito:", {
         depositId: depositId.toString(),
         depositorAddress: linkData.depositorAddress,
         claimer: walletAddress,
@@ -116,7 +116,7 @@ export default function ClaimPage() {
       const accountData = await accountResponse.json();
 
       if (!accountData.result?.value) {
-        setTxStatus("Erro: Deposito nao encontrado na blockchain.\n\nO deposito pode nao ter sido criado com sucesso.");
+        setTxStatus("Erro: Depósito não encontrado na blockchain.\n\nO depósito pode não ter sido criado com sucesso.");
         return;
       }
 
@@ -156,13 +156,13 @@ export default function ClaimPage() {
       let errorMessage = err?.message || "Erro desconhecido";
 
       if (errorMessage.includes("InvalidSecret") || errorMessage.includes("0x1771")) {
-        errorMessage = "Codigo secreto invalido!";
+        errorMessage = "Código secreto inválido!";
       } else if (errorMessage.includes("AlreadyClaimed") || errorMessage.includes("0x1770")) {
-        errorMessage = "Este deposito ja foi resgatado!";
+        errorMessage = "Este depósito já foi resgatado!";
       } else if (errorMessage.includes("DepositExpired") || errorMessage.includes("0x1773")) {
-        errorMessage = "Este deposito expirou.";
+        errorMessage = "Este depósito expirou.";
       } else if (errorMessage.includes("AccountNotFound") || errorMessage.includes("account not found")) {
-        errorMessage = "Deposito nao encontrado.";
+        errorMessage = "Depósito não encontrado.";
       }
 
       setTxStatus(`Erro: ${errorMessage}`);
@@ -172,24 +172,29 @@ export default function ClaimPage() {
   // Invalid link
   if (!linkData && code) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-bg-primary relative">
+        {/* Background Effects */}
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-[-20%] right-[-10%] w-[400px] h-[400px] bg-red-500/10 rounded-full blur-[100px]" />
+          <div className="floating-orb-purple w-[400px] h-[400px] top-[-20%] right-[-10%]" style={{ background: 'rgba(239, 68, 68, 0.15)' }} />
         </div>
+        <div className="fixed inset-0 grid-pattern opacity-30 pointer-events-none" />
 
         <div className="relative z-10 max-w-xl mx-auto px-6 py-12">
           <Link href="/" className="btn-ghost inline-flex items-center gap-2 mb-8">
             ← Voltar
           </Link>
 
-          <div className="glass-card p-8 border-red-500/30">
-            <div className="text-center mb-6">
-              <span className="text-5xl">❌</span>
+          <div className="glass-card p-8 text-center" style={{ borderColor: 'rgba(239, 68, 68, 0.3)' }}>
+            <div className="w-20 h-20 rounded-3xl bg-red-500/15 border border-red-500/30 flex items-center justify-center text-4xl mx-auto mb-4">
+              ❌
             </div>
-            <h1 className="text-2xl font-bold text-red-400 mb-4 text-center">Link Invalido</h1>
-            <p className="text-muted text-center">
-              Este link de resgate e invalido. Verifique se copiou o link completo.
+            <h1 className="text-3xl font-bold text-red-400 mb-4">Link Inválido</h1>
+            <p className="text-muted mb-6">
+              Este link de resgate é inválido. Verifique se copiou o link completo.
             </p>
+            <Link href="/" className="btn-secondary inline-flex items-center gap-2">
+              Ir para Home
+            </Link>
           </div>
         </div>
       </div>
@@ -199,9 +204,12 @@ export default function ClaimPage() {
   // Wallet not connected
   if (status !== "connected") {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-bg-primary relative">
+        {/* Background Effects */}
+        <div className="hero-glow" />
+        <div className="fixed inset-0 grid-pattern opacity-30 pointer-events-none" />
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-sol-green/15 rounded-full blur-[120px]" />
+          <div className="floating-orb-green w-[500px] h-[500px] top-[-20%] left-[-10%]" />
         </div>
 
         <div className="relative z-10 max-w-xl mx-auto px-6 py-12">
@@ -211,32 +219,44 @@ export default function ClaimPage() {
 
           <div className="glass-card p-8 space-y-6">
             <div className="text-center">
-              <span className="text-5xl mb-4 block">🎁</span>
-              <h1 className="text-2xl font-bold mb-2 text-gradient">Resgatar SOL</h1>
+              <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-sol-green to-sol-blue flex items-center justify-center text-5xl mx-auto mb-4 glow-green">
+                🎁
+              </div>
+              <h1 className="text-3xl font-bold mb-2 text-gradient">Resgatar SOL</h1>
               <p className="text-muted">
-                Conecte sua wallet para resgatar os fundos.
+                Conecte sua wallet para resgatar os fundos
               </p>
             </div>
 
             {linkData && (
               <div className="card-section border-sol-green/30 bg-sol-green/5 text-center">
-                <span className="text-sol-green font-semibold">Link valido!</span>
-                <p className="text-xs text-muted mt-1">
-                  Deposit ID: {linkData.depositId.slice(0, 10)}...
+                <div className="flex items-center justify-center gap-2 text-sol-green font-semibold">
+                  <span>✅</span>
+                  <span>Link válido!</span>
+                </div>
+                <p className="text-xs text-muted mt-2 font-mono">
+                  Deposit ID: {linkData.depositId.slice(0, 12)}...
                 </p>
               </div>
             )}
 
             <div className="card-section border-sol-purple/30 bg-sol-purple/5">
-              <p className="font-medium text-sol-purple mb-2">⚠️ Configure para DEVNET</p>
-              <p className="text-xs text-muted">
-                <strong>Phantom:</strong> Settings → Developer Mode → Devnet<br/>
-                <strong>Solflare:</strong> Settings → Network → Devnet
-              </p>
+              <div className="flex items-start gap-3">
+                <span className="text-xl">⚠️</span>
+                <div>
+                  <p className="font-semibold text-sol-purple-light mb-1">Configure para DEVNET</p>
+                  <p className="text-xs text-muted">
+                    <strong>Phantom:</strong> Settings → Developer Mode → Devnet<br/>
+                    <strong>Solflare:</strong> Settings → Network → Devnet
+                  </p>
+                </div>
+              </div>
             </div>
 
-            <div className="space-y-3">
-              <p className="text-sm font-medium">Conectar wallet:</p>
+            <div className="space-y-4">
+              <p className="text-sm font-semibold text-center">Conectar wallet:</p>
+
+              {/* Solflare destacado */}
               {(() => {
                 const solflareConnector = connectors.find(
                   (c) => c.name.toLowerCase().includes("solflare")
@@ -282,11 +302,14 @@ export default function ClaimPage() {
 
   // Connected - show claim UI
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-bg-primary relative">
+      {/* Background Effects */}
+      <div className="hero-glow" />
+      <div className="fixed inset-0 grid-pattern opacity-30 pointer-events-none" />
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-sol-green/15 rounded-full blur-[120px]" />
+        <div className="floating-orb-green w-[500px] h-[500px] top-[-20%] left-[-10%]" />
         {claimed && (
-          <div className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-sol-purple/15 rounded-full blur-[100px]" />
+          <div className="floating-orb-purple w-[400px] h-[400px] bottom-[-10%] right-[-10%]" style={{ animationDelay: '-3s' }} />
         )}
       </div>
 
@@ -299,26 +322,28 @@ export default function ClaimPage() {
           {!claimed ? (
             <>
               <div className="text-center">
-                <span className="text-5xl mb-4 block">🎁</span>
-                <h1 className="text-2xl font-bold mb-2">Resgatar SOL</h1>
+                <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-sol-green to-sol-blue flex items-center justify-center text-5xl mx-auto mb-4 glow-green animate-float">
+                  🎁
+                </div>
+                <h1 className="text-3xl font-bold mb-2">Resgatar SOL</h1>
                 <p className="text-muted">
-                  Clique no botao abaixo para resgatar os fundos.
+                  Clique no botão abaixo para resgatar os fundos
                 </p>
               </div>
 
               {linkData && (
                 <div className="card-section space-y-3">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted">Deposit ID:</span>
-                    <span className="font-mono text-sol-purple">{linkData.depositId.slice(0, 15)}...</span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted">Deposit ID:</span>
+                    <span className="font-mono text-sm text-sol-purple-light">{linkData.depositId.slice(0, 15)}...</span>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted">De:</span>
-                    <span className="font-mono">{linkData.depositorAddress.slice(0, 8)}...{linkData.depositorAddress.slice(-4)}</span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted">De:</span>
+                    <span className="font-mono text-sm">{linkData.depositorAddress.slice(0, 8)}...{linkData.depositorAddress.slice(-4)}</span>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted">Para:</span>
-                    <span className="font-mono text-sol-green">{walletAddress?.slice(0, 8)}...{walletAddress?.slice(-4)}</span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted">Para:</span>
+                    <span className="font-mono text-sm text-sol-green">{walletAddress?.slice(0, 8)}...{walletAddress?.slice(-4)}</span>
                   </div>
                 </div>
               )}
@@ -326,30 +351,51 @@ export default function ClaimPage() {
               <button
                 onClick={handleClaim}
                 disabled={isSending}
-                className="btn-primary w-full text-lg py-4"
+                className="btn-primary w-full text-xl py-5 flex items-center justify-center gap-3"
               >
-                {isSending ? "Resgatando..." : "Resgatar SOL"}
+                {isSending ? (
+                  <>
+                    <span className="animate-spin w-6 h-6 border-2 border-white border-t-transparent rounded-full" />
+                    <span>Resgatando...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>🎁</span>
+                    <span>Resgatar SOL</span>
+                  </>
+                )}
               </button>
             </>
           ) : (
             <>
               <div className="text-center">
-                <span className="text-6xl mb-4 block">🎉</span>
-                <h1 className="text-2xl font-bold mb-2 text-gradient">Parabens!</h1>
-                <p className="text-muted">
-                  O resgate foi realizado com sucesso.
+                <div className="w-28 h-28 rounded-3xl bg-gradient-to-br from-sol-green to-sol-purple flex items-center justify-center text-6xl mx-auto mb-6 glow-green animate-float">
+                  🎉
+                </div>
+                <h1 className="text-4xl font-bold mb-3 text-gradient">Parabéns!</h1>
+                <p className="text-muted text-lg">
+                  O resgate foi realizado com sucesso
                 </p>
               </div>
 
-              <div className="card-section border-sol-green/30 bg-sol-green/5 text-center">
-                <p className="text-sol-green font-semibold">
-                  Os SOL foram transferidos para sua wallet!
+              <div className="card-section border-sol-green/30 bg-sol-green/5 text-center py-6">
+                <div className="text-sol-green text-xl font-bold mb-2">
+                  ✅ SOL transferidos!
+                </div>
+                <p className="text-sm text-muted">
+                  Os fundos foram enviados para sua wallet
                 </p>
               </div>
 
-              <Link href="/send" className="btn-secondary w-full text-center block">
-                Criar meu proprio envio
-              </Link>
+              <div className="grid gap-3">
+                <Link href="/send" className="btn-primary w-full flex items-center justify-center gap-2">
+                  <span>🚀</span>
+                  <span>Criar meu próprio envio</span>
+                </Link>
+                <Link href="/" className="btn-secondary w-full text-center">
+                  Voltar para Home
+                </Link>
+              </div>
             </>
           )}
 

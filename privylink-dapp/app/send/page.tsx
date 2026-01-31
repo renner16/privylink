@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useWalletConnection, useSendTransaction } from "@solana/react-hooks";
 import {
@@ -36,11 +36,11 @@ const LAMPORTS_PER_SOL = 1_000_000_000n;
 
 // Expiration options in seconds
 const EXPIRATION_OPTIONS = [
-  { label: "1 hora", value: 3600 },
-  { label: "24 horas", value: 86400 },
-  { label: "7 dias", value: 604800 },
-  { label: "30 dias", value: 2592000 },
-  { label: "Nunca expira", value: 0 },
+  { label: "1 hora", value: 3600, icon: "⏱️" },
+  { label: "24 horas", value: 86400, icon: "📅" },
+  { label: "7 dias", value: 604800, icon: "📆" },
+  { label: "30 dias", value: 2592000, icon: "🗓️" },
+  { label: "Nunca expira", value: 0, icon: "♾️" },
 ];
 
 // Generate magic link code (base64 encoded)
@@ -49,9 +49,9 @@ function encodeMagicLink(depositId: string, depositorAddress: string, secret: st
   return btoa(data).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
-export default function SendPage() {
+function SendPageContent() {
   const searchParams = useSearchParams();
-  const { wallet, status } = useWalletConnection();
+  const { wallet, status, connectors, connect } = useWalletConnection();
   const { send, isSending } = useSendTransaction();
 
   const [activeTab, setActiveTab] = useState<"send" | "claim">("send");
@@ -104,7 +104,7 @@ export default function SendPage() {
     if (!walletAddress || !amount || !secretCode || !wallet) return;
 
     try {
-      setTxStatus("Criando deposito...");
+      setTxStatus("Criando depósito...");
       setMagicLink(null);
       setDepositInfo(null);
 
@@ -117,7 +117,7 @@ export default function SendPage() {
       const MIN_AMOUNT = MIN_RENT + 5_000n;
 
       if (depositAmount < MIN_AMOUNT) {
-        setTxStatus(`Valor minimo: ${Number(MIN_AMOUNT) / Number(LAMPORTS_PER_SOL)} SOL`);
+        setTxStatus(`Valor mínimo: ${Number(MIN_AMOUNT) / Number(LAMPORTS_PER_SOL)} SOL`);
         return;
       }
 
@@ -194,12 +194,12 @@ export default function SendPage() {
         localStorage.setItem("privylink_deposits", JSON.stringify(stored));
       }
 
-      setTxStatus(`Deposito criado!\nSignature: ${signature?.slice(0, 20)}...`);
+      setTxStatus(`Depósito criado!\nSignature: ${signature?.slice(0, 20)}...`);
       setAmount("");
       setSecretCode("");
 
     } catch (err: any) {
-      console.error("Erro ao criar deposito:", err);
+      console.error("Erro ao criar depósito:", err);
       setTxStatus(`Erro: ${err?.message || "Erro desconhecido"}`);
     }
   }, [walletAddress, wallet, amount, secretCode, expiresIn, send]);
@@ -257,11 +257,11 @@ export default function SendPage() {
       let errorMessage = err?.message || "Erro desconhecido";
 
       if (errorMessage.includes("InvalidSecret")) {
-        errorMessage = "Codigo secreto invalido!";
+        errorMessage = "Código secreto inválido!";
       } else if (errorMessage.includes("AlreadyClaimed")) {
-        errorMessage = "Este deposito ja foi resgatado!";
+        errorMessage = "Este depósito já foi resgatado!";
       } else if (errorMessage.includes("DepositExpired")) {
-        errorMessage = "Este deposito expirou.";
+        errorMessage = "Este depósito expirou.";
       }
 
       setTxStatus(`Erro: ${errorMessage}`);
@@ -273,11 +273,15 @@ export default function SendPage() {
     setTxStatus("Copiado!");
   };
 
+  // Not connected
   if (status !== "connected") {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-bg-primary relative">
+        {/* Background Effects */}
+        <div className="hero-glow" />
+        <div className="fixed inset-0 grid-pattern opacity-30 pointer-events-none" />
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-sol-purple/15 rounded-full blur-[120px]" />
+          <div className="floating-orb-purple w-[500px] h-[500px] top-[-20%] left-[-10%]" />
         </div>
 
         <div className="relative z-10 max-w-xl mx-auto px-6 py-12">
@@ -286,11 +290,65 @@ export default function SendPage() {
           </Link>
 
           <div className="glass-card p-8">
-            <h1 className="text-2xl font-bold mb-4 text-gradient">PrivyLink</h1>
-            <p className="text-muted mb-6">Conecte sua wallet para continuar.</p>
+            <div className="text-center mb-8">
+              <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-sol-purple to-sol-green flex items-center justify-center text-4xl mx-auto mb-4 glow-purple">
+                🔐
+              </div>
+              <h1 className="text-3xl font-bold mb-2 text-gradient">PrivyLink</h1>
+              <p className="text-muted">Conecte sua wallet para continuar</p>
+            </div>
 
-            <div className="card-section border-sol-purple/30 bg-sol-purple/5">
-              <p className="text-sm text-sol-purple font-medium">⚠️ Configure sua wallet para DEVNET</p>
+            <div className="space-y-4">
+              {/* Solflare destacado */}
+              {(() => {
+                const solflareConnector = connectors.find(
+                  (c) => c.name.toLowerCase().includes("solflare")
+                );
+                if (solflareConnector) {
+                  return (
+                    <button
+                      onClick={() => connect(solflareConnector.id)}
+                      className="btn-primary w-full flex items-center justify-center gap-3"
+                    >
+                      <span className="text-xl">🔥</span>
+                      <span>Conectar com Solflare</span>
+                    </button>
+                  );
+                }
+                return null;
+              })()}
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                {connectors
+                  .filter(
+                    (c) =>
+                      !c.name.toLowerCase().includes("solflare") &&
+                      !c.name.toLowerCase().includes("metamask") &&
+                      !c.name.toLowerCase().includes("brave")
+                  )
+                  .slice(0, 4)
+                  .map((connector) => (
+                    <button
+                      key={connector.id}
+                      onClick={() => connect(connector.id)}
+                      className="btn-secondary"
+                    >
+                      {connector.name}
+                    </button>
+                  ))}
+              </div>
+            </div>
+
+            <div className="card-section border-sol-purple/30 bg-sol-purple/5 mt-6">
+              <div className="flex items-start gap-3">
+                <span className="text-xl">⚠️</span>
+                <div>
+                  <p className="font-semibold text-sol-purple-light mb-1">Rede de Testes</p>
+                  <p className="text-xs text-muted">
+                    Configure sua wallet para <strong>Solana Devnet</strong>
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -299,11 +357,13 @@ export default function SendPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Background glow */}
+    <div className="min-h-screen bg-bg-primary relative">
+      {/* Background Effects */}
+      <div className="hero-glow" />
+      <div className="fixed inset-0 grid-pattern opacity-30 pointer-events-none" />
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-sol-purple/15 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-sol-green/10 rounded-full blur-[100px]" />
+        <div className="floating-orb-purple w-[500px] h-[500px] top-[-20%] left-[-10%]" />
+        <div className="floating-orb-green w-[400px] h-[400px] bottom-[-10%] right-[-10%]" style={{ animationDelay: '-3s' }} />
       </div>
 
       <div className="relative z-10 max-w-xl mx-auto px-6 py-12 space-y-6">
@@ -316,76 +376,98 @@ export default function SendPage() {
           <div className="flex border-b border-border">
             <button
               onClick={() => { setActiveTab("send"); setTxStatus(null); }}
-              className={`flex-1 px-6 py-4 text-sm font-semibold transition-colors ${
+              className={`flex-1 px-6 py-4 font-semibold transition-all relative ${
                 activeTab === "send"
-                  ? "text-sol-purple border-b-2 border-sol-purple bg-sol-purple/5"
+                  ? "text-sol-purple"
                   : "text-muted hover:text-foreground"
               }`}
             >
-              📤 Enviar
+              <span className="flex items-center justify-center gap-2">
+                <span>📤</span>
+                <span>Enviar</span>
+              </span>
+              {activeTab === "send" && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-sol-purple to-sol-green" />
+              )}
             </button>
             <button
               onClick={() => { setActiveTab("claim"); setTxStatus(null); }}
-              className={`flex-1 px-6 py-4 text-sm font-semibold transition-colors ${
+              className={`flex-1 px-6 py-4 font-semibold transition-all relative ${
                 activeTab === "claim"
-                  ? "text-sol-green border-b-2 border-sol-green bg-sol-green/5"
+                  ? "text-sol-green"
                   : "text-muted hover:text-foreground"
               }`}
             >
-              📥 Resgatar
+              <span className="flex items-center justify-center gap-2">
+                <span>📥</span>
+                <span>Resgatar</span>
+              </span>
+              {activeTab === "claim" && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-sol-green to-sol-blue" />
+              )}
             </button>
           </div>
 
           <div className="p-6">
+            {/* ===== SEND TAB ===== */}
             {activeTab === "send" && !magicLink && (
-              <div className="space-y-5">
+              <div className="space-y-6">
                 <div>
-                  <h2 className="text-xl font-bold mb-1">Criar Deposito</h2>
+                  <h2 className="text-2xl font-bold mb-2">Criar Depósito Privado</h2>
                   <p className="text-sm text-muted">
-                    Envie SOL que so pode ser resgatado com o codigo secreto.
+                    Envie SOL que só pode ser resgatado com o código secreto
                   </p>
                 </div>
 
                 {/* Amount */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">Valor (SOL)</label>
-                  <input
-                    type="number"
-                    min="0.01"
-                    step="0.01"
-                    placeholder="0.1"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    disabled={isSending}
-                    className="input text-lg"
-                  />
+                  <label className="block text-sm font-semibold mb-2">Valor (SOL)</label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      placeholder="0.1"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      disabled={isSending}
+                      className="input text-2xl font-bold pr-16"
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted font-semibold">
+                      SOL
+                    </span>
+                  </div>
                 </div>
 
                 {/* Secret Code */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">Codigo Secreto</label>
+                  <label className="block text-sm font-semibold mb-2">Código Secreto</label>
                   <div className="flex gap-2">
                     <input
                       type="text"
-                      placeholder="Digite ou gere um codigo"
+                      placeholder="Digite ou gere um código"
                       value={secretCode}
                       onChange={(e) => setSecretCode(e.target.value)}
                       disabled={isSending}
-                      className="input flex-1"
+                      className="input flex-1 font-mono text-lg tracking-wider"
                     />
                     <button
                       onClick={generateSecret}
                       disabled={isSending}
-                      className="btn-secondary whitespace-nowrap"
+                      className="btn-secondary whitespace-nowrap flex items-center gap-2"
                     >
-                      Gerar
+                      <span>🎲</span>
+                      <span>Gerar</span>
                     </button>
                   </div>
+                  <p className="text-xs text-muted-dark mt-2">
+                    Este código será necessário para resgatar os fundos
+                  </p>
                 </div>
 
                 {/* Expiration */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">Expiracao</label>
+                  <label className="block text-sm font-semibold mb-2">Expiração</label>
                   <select
                     value={expiresIn}
                     onChange={(e) => setExpiresIn(Number(e.target.value))}
@@ -394,12 +476,12 @@ export default function SendPage() {
                   >
                     {EXPIRATION_OPTIONS.map((opt) => (
                       <option key={opt.value} value={opt.value}>
-                        {opt.label}
+                        {opt.icon} {opt.label}
                       </option>
                     ))}
                   </select>
-                  <p className="text-xs text-muted mt-2">
-                    Apos expirar, voce pode recuperar os fundos na pagina Recuperar.
+                  <p className="text-xs text-muted-dark mt-2">
+                    Após expirar, você pode recuperar os fundos na página "Meus Depósitos"
                   </p>
                 </div>
 
@@ -407,25 +489,35 @@ export default function SendPage() {
                 <button
                   onClick={handleCreateDeposit}
                   disabled={isSending || !amount || !secretCode || parseFloat(amount) <= 0}
-                  className="btn-primary w-full"
+                  className="btn-primary w-full text-lg py-4 flex items-center justify-center gap-3"
                 >
-                  {isSending ? "Criando..." : "Criar Deposito"}
+                  {isSending ? (
+                    <>
+                      <span className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full" />
+                      <span>Criando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>🚀</span>
+                      <span>Criar Depósito</span>
+                    </>
+                  )}
                 </button>
               </div>
             )}
 
+            {/* ===== SUCCESS - MAGIC LINK ===== */}
             {activeTab === "send" && magicLink && (
-              /* Success - Show Magic Link and QR Code */
               <div className="space-y-6">
                 <div className="text-center">
-                  <div className="inline-block p-4 bg-white rounded-xl">
-                    <QRCodeSVG value={magicLink} size={180} />
+                  <div className="inline-block p-4 bg-white rounded-2xl glow-green mb-4">
+                    <QRCodeSVG value={magicLink} size={200} />
                   </div>
-                  <p className="text-sm text-muted mt-3">Escaneie para resgatar</p>
+                  <p className="text-sm text-muted">Escaneie o QR code para resgatar</p>
                 </div>
 
                 <div className="space-y-3">
-                  <label className="block text-sm font-medium">Magic Link</label>
+                  <label className="block text-sm font-semibold">Magic Link</label>
                   <div className="flex gap-2">
                     <input
                       type="text"
@@ -437,22 +529,31 @@ export default function SendPage() {
                       onClick={() => copyToClipboard(magicLink)}
                       className="btn-primary whitespace-nowrap"
                     >
-                      Copiar
+                      📋 Copiar
                     </button>
                   </div>
                 </div>
 
                 {depositInfo && (
-                  <div className="card-section border-sol-green/30 bg-sol-green/5 space-y-2">
-                    <p className="font-semibold text-sol-green">Deposito Criado!</p>
-                    <div className="text-sm text-muted space-y-1">
-                      <p><span className="font-medium text-foreground">ID:</span> {depositInfo.depositId}</p>
-                      <p><span className="font-medium text-foreground">Codigo:</span> <span className="font-mono text-sol-purple">{depositInfo.secret}</span></p>
+                  <div className="card-section border-sol-green/30 bg-sol-green/5 space-y-3">
+                    <div className="flex items-center gap-2 text-sol-green font-semibold">
+                      <span>✅</span>
+                      <span>Depósito Criado com Sucesso!</span>
+                    </div>
+                    <div className="text-sm space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-muted">ID:</span>
+                        <span className="font-mono">{depositInfo.depositId}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted">Código:</span>
+                        <span className="font-mono text-sol-purple-light font-bold">{depositInfo.secret}</span>
+                      </div>
                       {depositInfo.expiresAt > 0 && (
-                        <p>
-                          <span className="font-medium text-foreground">Expira:</span>{" "}
-                          {new Date(depositInfo.expiresAt * 1000).toLocaleString()}
-                        </p>
+                        <div className="flex justify-between">
+                          <span className="text-muted">Expira:</span>
+                          <span>{new Date(depositInfo.expiresAt * 1000).toLocaleString()}</span>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -466,34 +567,35 @@ export default function SendPage() {
                   }}
                   className="btn-secondary w-full"
                 >
-                  Criar Novo Deposito
+                  Criar Novo Depósito
                 </button>
               </div>
             )}
 
+            {/* ===== CLAIM TAB ===== */}
             {activeTab === "claim" && (
-              <div className="space-y-5">
+              <div className="space-y-6">
                 <div>
-                  <h2 className="text-xl font-bold mb-1">Resgatar Deposito</h2>
+                  <h2 className="text-2xl font-bold mb-2">Resgatar Depósito</h2>
                   <p className="text-sm text-muted">
-                    Digite as informacoes do deposito para resgatar os SOL.
+                    Digite as informações do depósito para resgatar os SOL
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Deposit ID</label>
+                  <label className="block text-sm font-semibold mb-2">Deposit ID</label>
                   <input
                     type="text"
                     placeholder="Ex: 1706456789000"
                     value={claimDepositId}
                     onChange={(e) => setClaimDepositId(e.target.value)}
                     disabled={isSending}
-                    className="input"
+                    className="input font-mono"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Endereco do Depositante</label>
+                  <label className="block text-sm font-semibold mb-2">Endereço do Depositante</label>
                   <input
                     type="text"
                     placeholder="Ex: 7xKX..."
@@ -505,35 +607,48 @@ export default function SendPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Codigo Secreto</label>
+                  <label className="block text-sm font-semibold mb-2">Código Secreto</label>
                   <input
                     type="text"
-                    placeholder="O codigo que voce recebeu"
+                    placeholder="O código que você recebeu"
                     value={claimSecret}
                     onChange={(e) => setClaimSecret(e.target.value)}
                     disabled={isSending}
-                    className="input"
+                    className="input font-mono text-lg tracking-wider"
                   />
                 </div>
 
                 <button
                   onClick={handleClaim}
                   disabled={isSending || !claimDepositId || !claimSecret || !claimDepositorAddress}
-                  className="btn-primary w-full"
+                  className="btn-primary w-full text-lg py-4 flex items-center justify-center gap-3"
                 >
-                  {isSending ? "Processando..." : "Resgatar SOL"}
+                  {isSending ? (
+                    <>
+                      <span className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full" />
+                      <span>Processando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>🎁</span>
+                      <span>Resgatar SOL</span>
+                    </>
+                  )}
                 </button>
 
-                <p className="text-xs text-muted text-center">
-                  Recebeu um Magic Link? Basta abrir o link diretamente.
-                </p>
+                <div className="card-section text-center">
+                  <p className="text-sm text-muted">
+                    💡 Recebeu um <span className="text-sol-purple-light font-semibold">Magic Link</span>?
+                    Basta abrir o link diretamente!
+                  </p>
+                </div>
               </div>
             )}
 
             {/* Status */}
             {txStatus && (
               <div className={`mt-6 card-section text-sm whitespace-pre-line ${
-                txStatus.includes("sucesso") || txStatus.includes("Criado")
+                txStatus.includes("sucesso") || txStatus.includes("Criado") || txStatus.includes("Copiado")
                   ? "border-sol-green/30 bg-sol-green/5 text-sol-green"
                   : txStatus.includes("Erro")
                   ? "border-red-500/30 bg-red-500/5 text-red-400"
@@ -546,16 +661,35 @@ export default function SendPage() {
         </div>
 
         {/* Info Card */}
-        <div className="glass-card p-6 text-sm text-muted">
-          <p className="font-medium text-foreground mb-3">Como funciona:</p>
-          <ol className="list-decimal list-inside space-y-2">
-            <li>Voce cria um deposito com um codigo secreto</li>
-            <li>Compartilha o Magic Link ou QR code</li>
-            <li>O destinatario usa o link para resgatar</li>
-            <li>Se nao for resgatado, voce recupera apos expirar</li>
-          </ol>
+        <div className="glass-card p-6">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 rounded-xl bg-sol-purple/15 border border-sol-purple/30 flex items-center justify-center flex-shrink-0">
+              <span>💡</span>
+            </div>
+            <div>
+              <p className="font-semibold mb-2">Como funciona:</p>
+              <ol className="list-decimal list-inside space-y-1 text-sm text-muted">
+                <li>Você cria um depósito com um código secreto</li>
+                <li>Compartilha o Magic Link ou QR code</li>
+                <li>O destinatário usa o link para resgatar</li>
+                <li>Se não for resgatado, você recupera após expirar</li>
+              </ol>
+            </div>
+          </div>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SendPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-bg-primary flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-2 border-sol-purple border-t-transparent rounded-full" />
+      </div>
+    }>
+      <SendPageContent />
+    </Suspense>
   );
 }

@@ -85,11 +85,47 @@ function TypewriterText({ texts, speed = 100, deleteSpeed = 50, pauseDuration = 
   );
 }
 
+// Wallet definitions for fallback when extensions aren't detected
+const WALLET_OPTIONS = [
+  {
+    id: "solflare",
+    name: "Solflare",
+    icon: "/solflare.png",
+    downloadUrl: "https://solflare.com/download",
+    recommended: true,
+  },
+  {
+    id: "phantom",
+    name: "Phantom",
+    icon: "/phantom.png",
+    downloadUrl: "https://phantom.app/download",
+    recommended: false,
+  },
+];
+
 export default function Home() {
   const { connectors, connect, disconnect, wallet, status } =
     useWalletConnection();
 
   const address = wallet?.account.address.toString();
+
+  // Helper to find connector or fallback to download
+  const handleWalletClick = (walletOption: typeof WALLET_OPTIONS[0]) => {
+    const connector = connectors.find(
+      (c) => c.name.toLowerCase().includes(walletOption.id)
+    );
+    if (connector) {
+      connect(connector.id);
+    } else {
+      // Wallet not detected - open download page
+      window.open(walletOption.downloadUrl, "_blank");
+    }
+  };
+
+  // Check if a wallet is available
+  const isWalletAvailable = (walletId: string) => {
+    return connectors.some((c) => c.name.toLowerCase().includes(walletId));
+  };
 
   // Header hide/show on scroll
   const [headerVisible, setHeaderVisible] = useState(true);
@@ -172,44 +208,26 @@ export default function Home() {
                       onClick={() => setWalletDropdownOpen(false)}
                     />
                     <div className="absolute right-0 top-full mt-2 z-50 w-56 rounded-lg border border-border-subtle bg-bg-primary p-2 shadow-lg">
-                      {(() => {
-                        const solflare = connectors.find(
-                          (c) => c.name.toLowerCase().includes("solflare")
-                        );
-                        if (solflare) {
-                          return (
-                            <button
-                              onClick={() => {
-                                connect(solflare.id);
-                                setWalletDropdownOpen(false);
-                              }}
-                              disabled={status === "connecting"}
-                              className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm hover:bg-bg-elevated transition"
-                            >
-                              <img src="/solflare.png" alt="Solflare" className="h-5 w-5" />
-                              <span>Solflare</span>
-                              <span className="ml-auto text-xs text-sol-green">Recommended</span>
-                            </button>
-                          );
-                        }
-                        return null;
-                      })()}
-                      {connectors
-                        .filter((c) => !c.name.toLowerCase().includes("solflare") && !c.name.toLowerCase().includes("brave"))
-                        .map((connector) => (
-                          <button
-                            key={connector.id}
-                            onClick={() => {
-                              connect(connector.id);
-                              setWalletDropdownOpen(false);
-                            }}
-                            disabled={status === "connecting"}
-                            className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm hover:bg-bg-elevated transition"
-                          >
-                            <span className="h-5 w-5 rounded-full bg-bg-elevated" />
-                            <span>{connector.name}</span>
-                          </button>
-                        ))}
+                      {WALLET_OPTIONS.map((walletOption) => (
+                        <button
+                          key={walletOption.id}
+                          onClick={() => {
+                            handleWalletClick(walletOption);
+                            setWalletDropdownOpen(false);
+                          }}
+                          disabled={status === "connecting"}
+                          className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm hover:bg-bg-elevated transition"
+                        >
+                          <img src={walletOption.icon} alt={walletOption.name} className="h-5 w-5" />
+                          <span>{walletOption.name}</span>
+                          {walletOption.recommended && (
+                            <span className="ml-auto text-xs text-sol-green">Recommended</span>
+                          )}
+                          {!isWalletAvailable(walletOption.id) && (
+                            <span className="ml-auto text-[10px] text-muted">Install</span>
+                          )}
+                        </button>
+                      ))}
                       <div className="mt-2 border-t border-border-subtle pt-2">
                         <p className="px-3 py-1 text-[10px] text-muted">Configure: Settings → Network → Devnet</p>
                       </div>
@@ -312,36 +330,20 @@ export default function Home() {
                     <p className="text-xs text-muted">Settings → Network → Devnet</p>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {(() => {
-                      const solflare = connectors.find(
-                        (c) => c.name.toLowerCase().includes("solflare")
-                      );
-                      if (solflare) {
-                        return (
-                          <button
-                            onClick={() => connect(solflare.id)}
-                            disabled={status === "connecting"}
-                            className="btn-primary gap-2 py-2.5"
-                          >
-                            <img src="/solflare.png" alt="Solflare" className="h-5 w-5" />
-                            Solflare
-                          </button>
-                        );
-                      }
-                      return null;
-                    })()}
-                    {connectors
-                      .filter((c) => !c.name.toLowerCase().includes("solflare") && !c.name.toLowerCase().includes("brave"))
-                      .map((connector) => (
-                        <button
-                          key={connector.id}
-                          onClick={() => connect(connector.id)}
-                          disabled={status === "connecting"}
-                          className="btn-secondary py-2.5"
-                        >
-                          {connector.name}
-                        </button>
-                      ))}
+                    {WALLET_OPTIONS.map((walletOption, index) => (
+                      <button
+                        key={walletOption.id}
+                        onClick={() => handleWalletClick(walletOption)}
+                        disabled={status === "connecting"}
+                        className={`${index === 0 ? 'btn-primary' : 'btn-secondary'} gap-2 py-2.5`}
+                      >
+                        <img src={walletOption.icon} alt={walletOption.name} className="h-5 w-5" />
+                        {walletOption.name}
+                        {!isWalletAvailable(walletOption.id) && (
+                          <span className="text-[10px] opacity-70">(Install)</span>
+                        )}
+                      </button>
+                    ))}
                   </div>
                 </div>
               ) : (
