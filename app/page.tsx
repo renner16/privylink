@@ -133,9 +133,12 @@ export default function Home() {
       (c) => c.name.toLowerCase().includes(walletOption.id)
     );
 
+    // Real-time detection (more reliable than state)
+    const isDetectedNow = walletOption.detectGlobal();
+
     if (connector) {
       connect(connector.id);
-    } else if (detectedWallets[walletOption.id]) {
+    } else if (isDetectedNow) {
       // Extension detected via window global - try to connect directly
       try {
         if (walletOption.id === "solflare" && (window as any).solflare) {
