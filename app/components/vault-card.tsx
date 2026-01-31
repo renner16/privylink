@@ -528,7 +528,9 @@ export function VaultCard() {
         if (data.result?.value !== undefined) {
           setWalletBalance(data.result.value / 1e9);
         }
-      } catch {}
+      } catch (e) {
+        console.warn("Failed to refresh balance after claim:", e);
+      }
 
       const amountStr = claimAmount > 0 ? ` You received ${claimAmount.toFixed(4)} SOL!` : "";
       setTxStatus(`Claim successful!${amountStr}`);

@@ -15,12 +15,32 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Solana dApp Starter",
-  description: "A minimal Next.js starter powered by @solana/react-hooks",
+  title: "PrivyLink - Private SOL Transfers",
+  description: "Send SOL privately via magic links. No direct on-chain connection between sender and receiver. Built for Solana Privacy Hack 2026.",
+  keywords: ["Solana", "privacy", "SOL", "crypto", "transfer", "magic link", "private"],
+  authors: [{ name: "renner16", url: "https://github.com/renner16" }],
+  openGraph: {
+    title: "PrivyLink - Private SOL Transfers",
+    description: "Send SOL privately via magic links. No direct on-chain link between sender and receiver.",
+    url: "https://privylink.vercel.app",
+    siteName: "PrivyLink",
+    type: "website",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "PrivyLink - Private SOL Transfers",
+    description: "Send SOL privately via magic links on Solana.",
+    creator: "@_renner_araujo",
+  },
   icons: {
-    icon: "/icon.svg",
-    shortcut: "/icon.svg",
-    apple: "/icon.svg",
+    icon: "/logo-privylink.png",
+    shortcut: "/logo-privylink.png",
+    apple: "/logo-privylink.png",
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
 };
 

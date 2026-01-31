@@ -74,6 +74,15 @@ If unclaimed, sender can manually refund after expiration (1 hour to 30 days).
 - **History Settings** - Toggle save history on/off, clear all
 - **Explorer Links** - Quick access to Solana Explorer for each transaction
 
+### Mobile Support
+- **Deep Links** - Open magic links in wallet's in-app browser (Phantom/Solflare)
+- **Web Share API** - Native share menu for QR code on mobile
+- **Responsive Design** - Optimized for all screen sizes
+- **Clear Error Messages** - Portuguese error messages for common issues:
+  - Insufficient balance for network fees
+  - Wrong network (Mainnet vs Devnet)
+  - Transaction cancelled/expired
+
 ### Dashboard (My Transfers)
 - **Deposits Tab** - View all deposits with status (Active/Expired/Claimed)
 - **Claims Tab** - View received transfers with SOL amounts
@@ -187,6 +196,10 @@ PrivyLink provides **relationship privacy** through intermediary vaults:
 - [x] Local history with settings
 - [x] Explorer links for all transactions
 - [x] Devnet deployment
+- [x] **Mobile deep links** (Phantom/Solflare in-app browser)
+- [x] **Mobile QR download** (Web Share API + fallback)
+- [x] **Balance check before claim** (prevents failed transactions)
+- [x] **Clear error messages** (insufficient funds, wrong network)
 
 ### Phase 2 - Enhanced Privacy (Planned)
 - [ ] Arcium MPC integration
@@ -250,7 +263,7 @@ Configure your wallet for **Devnet**:
 
 Get devnet SOL: [faucet.solana.com](https://faucet.solana.com/)
 
-### Test Flow
+### Test Flow (Desktop)
 
 1. **Connect wallet** (Solflare or Phantom on Devnet)
 2. **Create deposit** with 0.01 SOL, set expiration
@@ -258,6 +271,16 @@ Get devnet SOL: [faucet.solana.com](https://faucet.solana.com/)
 4. **Open in new tab/device**, connect different wallet
 5. **Enter secret code** and claim
 6. **Check My Transfers** - deposit shows as "Claimed"
+
+### Test Flow (Mobile)
+
+1. **Open magic link** in external browser (Brave, Chrome, Safari)
+2. **Click "Connect Wallet"** → selects Phantom or Solflare
+3. **App opens automatically** with in-app browser loading the page
+4. **Claim data preserved** → depositor, deposit ID, and secret are pre-filled
+5. **Connect and claim** directly from wallet's browser
+
+> **Note:** When accessing from external mobile browser, clicking a wallet button opens the wallet app's in-app browser with all claim parameters preserved.
 
 ---
 
