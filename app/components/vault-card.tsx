@@ -33,6 +33,7 @@ export function VaultCard() {
   const [amount, setAmount] = useState("");
   const [secretCode, setSecretCode] = useState("");
   const [expirationHours, setExpirationHours] = useState("24");
+  const [depositLabel, setDepositLabel] = useState("");
 
   // Claim deposit states
   const [claimDepositor, setClaimDepositor] = useState("");
@@ -46,9 +47,73 @@ export function VaultCard() {
   const [lastDepositSecret, setLastDepositSecret] = useState<string | null>(null);
   const [lastDepositId, setLastDepositId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"create" | "claim">("create");
+  const [showQrModal, setShowQrModal] = useState(false);
+
+  // Download QR Code as PNG
+  const downloadQrCode = (size: number = 300) => {
+    if (!magicLink || !lastDepositSecret) return;
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    // Create a temporary QR code SVG
+    const qrValue = `${magicLink}&secret=${encodeURIComponent(lastDepositSecret)}`;
+    const svgElement = document.querySelector(".qr-download-source svg") as SVGElement;
+    if (!svgElement) return;
+
+    const svgData = new XMLSerializer().serializeToString(svgElement);
+    const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(svgBlob);
+
+    const img = new Image();
+    img.onload = () => {
+      canvas.width = size;
+      canvas.height = size;
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, size, size);
+      ctx.drawImage(img, 0, 0, size, size);
+
+      const pngUrl = canvas.toDataURL("image/png");
+      const link = document.createElement("a");
+      link.download = `privylink-qr-${lastDepositId?.slice(-6) || "code"}.png`;
+      link.href = pngUrl;
+      link.click();
+
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+  };
 
   const walletAddress = wallet?.account.address;
   const [programDeployed, setProgramDeployed] = useState<boolean | null>(null);
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+
+  // Fetch wallet balance
+  useEffect(() => {
+    if (!walletAddress) {
+      setWalletBalance(null);
+      return;
+    }
+    const fetchBalance = async () => {
+      try {
+        const RPC = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || "https://api.devnet.solana.com";
+        const res = await fetch(RPC, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            jsonrpc: "2.0", id: 1, method: "getBalance",
+            params: [walletAddress]
+          })
+        });
+        const data = await res.json();
+        if (data.result?.value !== undefined) {
+          setWalletBalance(data.result.value / 1e9);
+        }
+      } catch { setWalletBalance(null); }
+    };
+    fetchBalance();
+  }, [walletAddress]);
 
   // Parse Magic Link and Tab from URL
   useEffect(() => {
@@ -65,12 +130,31 @@ export function VaultCard() {
       if (secret) setClaimSecret(secret);
       setActiveTab("claim");
       window.history.replaceState({}, "", window.location.pathname);
+      // Scroll to the vault card section
+      setTimeout(() => {
+        const sendSection = document.getElementById("send");
+        if (sendSection) {
+          sendSection.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }, 100);
     } else if (tab === "claim") {
       setActiveTab("claim");
       window.history.replaceState({}, "", window.location.pathname + window.location.hash);
+      setTimeout(() => {
+        const sendSection = document.getElementById("send");
+        if (sendSection) {
+          sendSection.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }, 100);
     } else if (tab === "send") {
       setActiveTab("create");
       window.history.replaceState({}, "", window.location.pathname + window.location.hash);
+      setTimeout(() => {
+        const sendSection = document.getElementById("send");
+        if (sendSection) {
+          sendSection.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }, 100);
     }
   }, []);
 
@@ -167,10 +251,32 @@ export function VaultCard() {
       setLastDepositSecret(secretCode);
       setLastDepositId(depositId.toString());
 
+      // Save label to localStorage if provided (using PDA as key) and history is enabled
+      const saveHistoryForLabel = localStorage.getItem("privylink_save_history");
+      const shouldSaveLabel = saveHistoryForLabel === null || saveHistoryForLabel === "true";
+      if (depositLabel.trim() && shouldSaveLabel) {
+        try {
+          const depositIdBytes = new Uint8Array(8);
+          new DataView(depositIdBytes.buffer).setBigUint64(0, depositId, true);
+          const addressEncoder = getAddressEncoder();
+          const depositorBytes = addressEncoder.encode(walletAddress as Address);
+          const [pda] = await getProgramDerivedAddress({
+            programAddress: VAULT_PROGRAM_ADDRESS,
+            seeds: [new TextEncoder().encode("deposit"), depositorBytes, depositIdBytes],
+          });
+          const labels = JSON.parse(localStorage.getItem("privylink_labels") || "{}");
+          labels[pda] = depositLabel.trim();
+          localStorage.setItem("privylink_labels", JSON.stringify(labels));
+        } catch (e) {
+          console.warn("Failed to save label:", e);
+        }
+      }
+
       setTxStatus(`Deposit created! Amount: ${amount} SOL`);
       setTxStatusType("success");
       setAmount("");
       setSecretCode("");
+      setDepositLabel("");
     } catch (err: any) {
       console.error("Create failed:", err);
       setTxStatus(err?.message || "Transaction failed");
@@ -199,6 +305,35 @@ export function VaultCard() {
         seeds: [new TextEncoder().encode("deposit"), depositorBytes, depositIdBytes],
       });
 
+      // Fetch deposit amount before claiming
+      let claimAmount = 0;
+      try {
+        const RPC = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || "https://api.devnet.solana.com";
+        const res = await fetch(RPC, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            jsonrpc: "2.0", id: 1, method: "getAccountInfo",
+            params: [calculatedPda, { encoding: "base64" }]
+          })
+        });
+        const data = await res.json();
+        if (data.result?.value?.data?.[0]) {
+          const base64 = data.result.value.data[0];
+          const binaryString = atob(base64);
+          const bytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          if (bytes.length >= 80) {
+            const dataView = new DataView(bytes.buffer);
+            claimAmount = Number(dataView.getBigUint64(72, true)) / 1e9;
+          }
+        }
+      } catch (e) {
+        console.warn("Failed to fetch deposit amount:", e);
+      }
+
       const discriminator = new Uint8Array([201, 106, 1, 224, 122, 144, 210, 155]);
       const secretBytes = new TextEncoder().encode(claimSecret);
       const secretLengthBytes = new Uint8Array(4);
@@ -226,7 +361,41 @@ export function VaultCard() {
       setTxStatus("Waiting for signature...");
       await send({ instructions: [instruction] });
 
-      setTxStatus("Claim successful! Funds transferred to your wallet.");
+      // Save claim to history if enabled
+      const saveHistorySetting = localStorage.getItem("privylink_save_history");
+      const saveHistory = saveHistorySetting === null || saveHistorySetting === "true";
+      if (saveHistory) {
+        try {
+          const claims = JSON.parse(localStorage.getItem("privylink_claims") || "[]");
+          claims.unshift({
+            pda: calculatedPda,
+            depositor: claimDepositor,
+            depositId: claimDepositId,
+            amount: claimAmount,
+            claimedAt: Date.now(),
+          });
+          localStorage.setItem("privylink_claims", JSON.stringify(claims.slice(0, 100))); // Keep last 100
+        } catch (e) {
+          console.warn("Failed to save claim history:", e);
+        }
+      }
+
+      // Refresh wallet balance after claim
+      try {
+        const RPC = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || "https://api.devnet.solana.com";
+        const res = await fetch(RPC, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getBalance", params: [walletAddress] })
+        });
+        const data = await res.json();
+        if (data.result?.value !== undefined) {
+          setWalletBalance(data.result.value / 1e9);
+        }
+      } catch {}
+
+      const amountStr = claimAmount > 0 ? ` You received ${claimAmount.toFixed(4)} SOL!` : "";
+      setTxStatus(`Claim successful!${amountStr}`);
       setTxStatusType("success");
       setClaimDepositor("");
       setClaimDepositId("");
@@ -317,7 +486,14 @@ export function VaultCard() {
         {activeTab === "create" && (
           <div className="space-y-4">
             <div>
-              <label className="mb-2 block text-xs font-medium text-muted">Amount (SOL)</label>
+              <div className="mb-2 flex items-center justify-between">
+                <label className="text-xs font-medium text-muted">Amount (SOL)</label>
+                {walletBalance !== null && (
+                  <span className="text-xs text-muted">
+                    Balance: <span className="text-sol-green font-medium">{walletBalance.toFixed(4)}</span> SOL
+                  </span>
+                )}
+              </div>
               <input
                 type="number"
                 min="0"
@@ -327,6 +503,32 @@ export function VaultCard() {
                 onChange={(e) => setAmount(e.target.value)}
                 disabled={isSending}
                 className="input"
+              />
+              {amount && walletBalance !== null && parseFloat(amount) > walletBalance && (
+                <p className="mt-1 text-xs text-red-400">Insufficient balance</p>
+              )}
+            </div>
+
+            <div>
+              <label className="mb-2 flex items-center gap-1 text-xs font-medium text-muted">
+                Label <span className="text-muted/50">(optional)</span>
+                <span className="group relative cursor-help">
+                  <svg className="h-3.5 w-3.5 text-muted/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-48 rounded-lg bg-bg-primary border border-border-subtle p-2 text-[10px] text-white shadow-lg z-10">
+                    Saved locally in your browser only. Not stored on-chain.
+                  </span>
+                </span>
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. Payment to John"
+                value={depositLabel}
+                onChange={(e) => setDepositLabel(e.target.value)}
+                disabled={isSending}
+                className="input"
+                maxLength={50}
               />
             </div>
 
@@ -347,12 +549,28 @@ export function VaultCard() {
                   disabled={isSending}
                   className="btn-secondary px-3 shrink-0"
                   title="Generate random secret"
+                  aria-label="Generate random secret"
                 >
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                   </svg>
                 </button>
               </div>
+              {secretCode && (
+                <div className="mt-2 flex items-center gap-2">
+                  <div className="flex gap-1">
+                    <div className={`h-1 w-6 rounded ${secretCode.length >= 4 ? 'bg-red-400' : 'bg-white/20'}`} />
+                    <div className={`h-1 w-6 rounded ${secretCode.length >= 8 ? 'bg-amber-400' : 'bg-white/20'}`} />
+                    <div className={`h-1 w-6 rounded ${secretCode.length >= 12 ? 'bg-sol-green' : 'bg-white/20'}`} />
+                  </div>
+                  <span className={`text-[10px] ${
+                    secretCode.length >= 12 ? 'text-sol-green' :
+                    secretCode.length >= 8 ? 'text-amber-400' : 'text-red-400'
+                  }`}>
+                    {secretCode.length >= 12 ? 'Strong' : secretCode.length >= 8 ? 'Medium' : 'Weak'}
+                  </span>
+                </div>
+              )}
             </div>
 
             <div>
@@ -374,7 +592,7 @@ export function VaultCard() {
 
             <button
               onClick={handleCreateDeposit}
-              disabled={isSending || !amount || !secretCode || parseFloat(amount) <= 0}
+              disabled={isSending || !amount || !secretCode || parseFloat(amount) <= 0 || (walletBalance !== null && parseFloat(amount) > walletBalance)}
               className="btn-primary w-full py-3"
             >
               {isSending ? <><span className="spinner" /> Creating...</> : "Create Deposit"}
@@ -392,12 +610,40 @@ export function VaultCard() {
                 </div>
 
                 {/* QR Code */}
-                <div className="flex justify-center">
-                  <div className="qr-container">
+                <div className="flex flex-col items-center gap-2">
+                  {/* Hidden QR for download */}
+                  <div className="qr-download-source hidden">
+                    <QRCodeSVG value={`${magicLink}&secret=${encodeURIComponent(lastDepositSecret)}`} size={300} level="H" bgColor="#ffffff" fgColor="#000000" />
+                  </div>
+                  <button
+                    onClick={() => setShowQrModal(true)}
+                    className="qr-container cursor-pointer hover:scale-105 transition-transform"
+                    title="Click to enlarge"
+                  >
                     <QRCodeSVG value={`${magicLink}&secret=${encodeURIComponent(lastDepositSecret)}`} size={140} level="H" bgColor="#ffffff" fgColor="#000000" />
+                  </button>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setShowQrModal(true)}
+                      className="text-xs text-sol-purple hover:text-sol-purple/80 flex items-center gap-1"
+                    >
+                      <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                      </svg>
+                      Enlarge
+                    </button>
+                    <span className="text-white/20">|</span>
+                    <button
+                      onClick={() => downloadQrCode(300)}
+                      className="text-xs text-sol-green hover:text-sol-green/80 flex items-center gap-1"
+                    >
+                      <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      Download
+                    </button>
                   </div>
                 </div>
-                <p className="text-center text-xs text-muted">Scan to claim (includes secret)</p>
 
                 {/* Card 1: Complete Link */}
                 <div className="rounded-xl border border-sol-purple/30 bg-sol-purple/5 p-4">
@@ -563,14 +809,67 @@ export function VaultCard() {
         {/* Network Info */}
         <div className="mt-6 flex items-center justify-between rounded-lg border border-border-subtle bg-bg-elevated px-4 py-3">
           <div className="flex items-center gap-2">
-            <span className="status-pending" />
-            <span className="text-xs font-medium">Devnet</span>
+            <span className="status-online" />
+            <span className="text-xs font-medium text-sol-green">Devnet</span>
           </div>
-          <code className="font-mono text-[10px] text-subtle">
+          <a
+            href={`https://explorer.solana.com/address/${VAULT_PROGRAM_ADDRESS}?cluster=devnet`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-mono text-[10px] text-subtle hover:text-foreground transition flex items-center gap-1"
+            title="View on Solana Explorer"
+          >
             {VAULT_PROGRAM_ADDRESS.slice(0, 8)}...{VAULT_PROGRAM_ADDRESS.slice(-8)}
-          </code>
+            <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+          </a>
         </div>
       </div>
+
+      {/* QR Code Modal */}
+      {showQrModal && magicLink && lastDepositSecret && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            onClick={() => setShowQrModal(false)}
+          />
+          <div className="relative rounded-2xl border border-border-subtle bg-bg-primary p-6 shadow-2xl">
+            <button
+              onClick={() => setShowQrModal(false)}
+              className="absolute top-3 right-3 p-2 rounded-lg hover:bg-white/10 transition"
+              aria-label="Close"
+            >
+              <svg className="h-5 w-5 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <div className="qr-container mx-auto" style={{ padding: "16px" }}>
+              <QRCodeSVG
+                value={`${magicLink}&secret=${encodeURIComponent(lastDepositSecret)}`}
+                size={280}
+                level="H"
+                bgColor="#ffffff"
+                fgColor="#000000"
+              />
+            </div>
+            <p className="mt-4 text-center text-sm text-muted">Scan to claim this deposit</p>
+            <p className="mt-1 text-center text-xs text-amber-400">Contains secret code</p>
+            <button
+              onClick={() => {
+                downloadQrCode(500);
+                setShowQrModal(false);
+              }}
+              className="mt-4 w-full btn-primary py-2.5 flex items-center justify-center gap-2"
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              Download PNG
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

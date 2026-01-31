@@ -13,7 +13,7 @@ const RPC_ENDPOINT =
 if (typeof window !== "undefined") {
   console.log("🔗 PrivyLink RPC Endpoint:", RPC_ENDPOINT);
   console.log("🌐 Environment variable:", process.env.NEXT_PUBLIC_SOLANA_RPC_URL || "Not set (using default devnet)");
-  console.log("✅ App está configurado para:", RPC_ENDPOINT.includes("devnet") ? "DEVNET ✅" : "MAINNET ⚠️");
+  console.log("✅ App configured for:", RPC_ENDPOINT.includes("devnet") ? "DEVNET ✅" : "MAINNET ⚠️");
 }
 
 const client = createClient({

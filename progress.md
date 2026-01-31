@@ -1,7 +1,7 @@
 # PrivyLink — Progresso
 
 ## Última atualização
-31/01/2026 22:30
+01/02/2026 00:15
 
 ## ✅ Concluído
 - Estrutura base do projeto (Next.js 16 + Anchor)
@@ -38,6 +38,26 @@
   - **Brave Wallet removido** da lista de wallets
   - **Link GitHub** atualizado: github.com/renner16/privylink com ícone
   - **Layout reformulado**: card de wallet em cima, card Send/Claim em largura total
+- **[01/02] MELHORIAS UX FINAIS**:
+  - **Página Principal:**
+    - Diagrama visual no "How It Works" (Sender → Vault PDA → Receiver)
+    - Roadmap: "In Progress" mudou para "Planned" (Phase 2)
+    - GitHub link mostra "Open Source"
+    - Devnet no footer agora é clicável (abre Solana Explorer)
+    - Removido código morto (isSecureContext)
+  - **Vault Card (Send/Claim):**
+    - **Saldo da wallet** exibido no campo Amount
+    - **Validação de saldo** antes de criar depósito (botão desabilitado se insuficiente)
+    - **Tooltip** no campo Label explicando que é salvo localmente
+    - **Indicador de força** do secret (Weak/Medium/Strong com barras coloridas)
+    - **QR Code expandível** (clique para ver maior em modal)
+    - **Valor recebido no claim** exibido na mensagem de sucesso
+    - **Devnet status verde** e link para Explorer
+  - **Página My Transfers:**
+    - **SOL Received calculado** baseado nos claims salvos
+    - **Valor em SOL** exibido nos cards de claims
+    - **Link "Explorer"** em cada depósito e claim
+    - Claims agora salvam o amount no localStorage
 
 ## 🚧 Em progresso
 - (nenhum)
