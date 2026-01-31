@@ -49,16 +49,22 @@ export function VaultCard() {
   const [activeTab, setActiveTab] = useState<"create" | "claim">("create");
   const [showQrModal, setShowQrModal] = useState(false);
 
+  // Detect mobile device
+  const isMobile = () => {
+    if (typeof window === "undefined") return false;
+    return /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(
+      (navigator.userAgent || "").toLowerCase()
+    );
+  };
+
   // Download QR Code as PNG
-  const downloadQrCode = (size: number = 300) => {
+  const downloadQrCode = async (size: number = 300) => {
     if (!magicLink || !lastDepositSecret) return;
 
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Create a temporary QR code SVG
-    const qrValue = `${magicLink}&secret=${encodeURIComponent(lastDepositSecret)}`;
     const svgElement = document.querySelector(".qr-download-source svg") as SVGElement;
     if (!svgElement) return;
 
@@ -67,20 +73,71 @@ export function VaultCard() {
     const url = URL.createObjectURL(svgBlob);
 
     const img = new Image();
-    img.onload = () => {
+    img.onload = async () => {
       canvas.width = size;
       canvas.height = size;
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, size, size);
       ctx.drawImage(img, 0, 0, size, size);
 
-      const pngUrl = canvas.toDataURL("image/png");
-      const link = document.createElement("a");
-      link.download = `privylink-qr-${lastDepositId?.slice(-6) || "code"}.png`;
-      link.href = pngUrl;
-      link.click();
-
       URL.revokeObjectURL(url);
+
+      const fileName = `privylink-qr-${lastDepositId?.slice(-6) || "code"}.png`;
+
+      // Mobile: usar share API ou abrir em nova aba
+      if (isMobile()) {
+        try {
+          // Converter canvas para blob
+          const blob = await new Promise<Blob>((resolve) => {
+            canvas.toBlob((b) => resolve(b!), "image/png");
+          });
+
+          // Tentar usar Web Share API (funciona bem em mobile)
+          if (navigator.share && navigator.canShare) {
+            const file = new File([blob], fileName, { type: "image/png" });
+            if (navigator.canShare({ files: [file] })) {
+              await navigator.share({
+                files: [file],
+                title: "PrivyLink QR Code",
+              });
+              return;
+            }
+          }
+
+          // Fallback: abrir imagem em nova aba para salvar manualmente
+          const pngUrl = canvas.toDataURL("image/png");
+          const newTab = window.open();
+          if (newTab) {
+            newTab.document.write(`
+              <html>
+                <head><title>Salvar QR Code</title></head>
+                <body style="margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#1a1a2e;">
+                  <div style="text-align:center;color:white;font-family:system-ui;">
+                    <img src="${pngUrl}" style="max-width:90vw;border-radius:12px;" />
+                    <p style="margin-top:16px;font-size:14px;">Segure na imagem para salvar</p>
+                  </div>
+                </body>
+              </html>
+            `);
+            newTab.document.close();
+          }
+        } catch (err) {
+          console.warn("Mobile download fallback:", err);
+          // Último fallback: tentar download normal
+          const pngUrl = canvas.toDataURL("image/png");
+          const link = document.createElement("a");
+          link.download = fileName;
+          link.href = pngUrl;
+          link.click();
+        }
+      } else {
+        // Desktop: download normal
+        const pngUrl = canvas.toDataURL("image/png");
+        const link = document.createElement("a");
+        link.download = fileName;
+        link.href = pngUrl;
+        link.click();
+      }
     };
     img.src = url;
   };
