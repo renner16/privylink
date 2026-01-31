@@ -368,12 +368,27 @@ export function VaultCard() {
       let msg = err?.message || "Transaction failed";
       const msgLower = msg.toLowerCase();
 
-      if (msgLower.includes("cancelled") || msgLower.includes("canceled") || msgLower.includes("rejected") || msgLower.includes("denied")) {
+      if (
+        msgLower.includes("insufficient") ||
+        msgLower.includes("not enough") ||
+        msgLower.includes("0x1") ||
+        msgLower.includes("no record of a prior credit") ||
+        msgLower.includes("lamports")
+      ) {
+        msg = "Saldo insuficiente. Verifique se você tem SOL suficiente para o depósito + taxa de rede (~0.002 SOL).";
+      } else if (
+        msgLower.includes("mainnet") ||
+        msgLower.includes("mynet") ||
+        msgLower.includes("wrong network") ||
+        msgLower.includes("network mismatch")
+      ) {
+        msg = "Rede incorreta. Configure sua carteira para Devnet (Settings → Network → Devnet).";
+      } else if (msgLower.includes("cancelled") || msgLower.includes("canceled") || msgLower.includes("rejected") || msgLower.includes("denied")) {
         msg = "Transação cancelada. Se você tem outra página aberta usando a carteira, feche-a e tente novamente.";
       } else if (msgLower.includes("already pending") || msgLower.includes("busy") || msgLower.includes("locked")) {
         msg = "Outra página está usando a carteira. Feche-a para continuar.";
-      } else if (msgLower.includes("insufficient")) {
-        msg = "Saldo insuficiente para esta transação.";
+      } else if (msgLower.includes("blockhash") || msgLower.includes("expired")) {
+        msg = "Transação expirou. Tente novamente.";
       }
       setTxStatus(msg);
       setTxStatusType("error");
@@ -509,10 +524,27 @@ export function VaultCard() {
         msg = "This deposit has already been claimed or refunded. The funds are no longer available.";
       } else if (msg.includes("DepositExpired") || msg.includes("#6003")) {
         msg = "This deposit has expired. The sender can now refund it.";
+      } else if (
+        msgLower.includes("insufficient") ||
+        msgLower.includes("not enough") ||
+        msgLower.includes("0x1") ||
+        msgLower.includes("no record of a prior credit") ||
+        msgLower.includes("lamports")
+      ) {
+        msg = "Saldo insuficiente para pagar a taxa de rede. Adicione SOL à sua carteira (mínimo ~0.001 SOL).";
+      } else if (
+        msgLower.includes("mainnet") ||
+        msgLower.includes("mynet") ||
+        msgLower.includes("wrong network") ||
+        msgLower.includes("network mismatch")
+      ) {
+        msg = "Rede incorreta. Configure sua carteira para Devnet (Settings → Network → Devnet).";
       } else if (msgLower.includes("cancelled") || msgLower.includes("canceled") || msgLower.includes("rejected") || msgLower.includes("denied")) {
         msg = "Transação cancelada. Se você tem outra página aberta usando a carteira, feche-a e tente novamente.";
       } else if (msgLower.includes("already pending") || msgLower.includes("busy") || msgLower.includes("locked")) {
         msg = "Outra página está usando a carteira. Feche-a para continuar.";
+      } else if (msgLower.includes("blockhash") || msgLower.includes("expired")) {
+        msg = "Transação expirou. Tente novamente.";
       }
       setTxStatus(msg);
       setTxStatusType("error");
