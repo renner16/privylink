@@ -1,7 +1,7 @@
 # PrivyLink — Progresso
 
 ## Última atualização
-30/01/2026 10:45
+30/01/2026 17:00
 
 ## ✅ Concluído
 - Estrutura base do projeto (Next.js 16 + Anchor)
@@ -20,26 +20,39 @@
   - Tabs para alternar entre criar/resgatar
   - Leitura automática de parâmetros da URL
   - Verificação de deploy do programa
-- **[29/01]** Página de Refund (`app/refund/page.tsx`):
-  - Lista depósitos expirados do usuário
-  - Botão de refund para cada depósito
-  - Feedback visual de sucesso/erro
 - **[29/01]** BUG CRÍTICO CORRIGIDO - CLAIM FUNCIONANDO!
   - Bug: System Program não permite `transfer` de contas com dados
   - Solução: Manipulação direta de lamports (`try_borrow_mut_lamports()`)
 - **[29/01]** Deploy na Devnet realizado com sucesso:
   - Program ID: `98WwJxc1aAeqGWuaouQntJYmdQEnELntf9BqKXD3o34W`
-- **[30/01] REDESIGN VISUAL ESTILO SOLANA** (refeito):
-  - Design system completo em `globals.css` com tokens Solana
-  - Cores: Purple (#9945FF), Green (#14F195), Blue (#00D4AA)
-  - Componentes: glass-card, btn-primary, btn-secondary, badges, inputs
-  - Gradientes e efeitos de glow com backdrop-blur
-  - Background com efeitos de luz (glow spheres)
-  - Landing page redesenhada com visual moderno
-  - Página /send com tabs (Enviar/Resgatar)
-  - Página /claim redesenhada
-  - Página /refund redesenhada
-  - Dark mode por padrão
+- **[30/01] REDESIGN FINAL** - Estilo Solana Privacy Hack:
+  - **Design System Completo** (`globals.css`):
+    - Paleta de cores: purple #9945FF, green #14F195
+    - Tokens CSS para spacing, typography, radii, shadows
+    - Utilities: card, card-hover, card-glow, btn-primary, btn-secondary
+    - Badges: badge, badge-purple, badge-green
+    - Form elements: input, select
+    - Animations: spin, pulse, fadeIn
+  - **Landing Page** (`page.tsx`):
+    - Hero: "Private Transfers on Solana" + 2 CTAs
+    - How It Works: 3 steps grid
+    - Privacy by Design: 6 feature cards
+    - Roadmap: 3 phases timeline
+    - Footer: GitHub, Devnet, Solana Privacy Hack 2026
+  - **Send/Claim** (`vault-card.tsx`):
+    - Tabs: Send / Claim
+    - Formulário limpo
+    - Success state com QR Code elegante
+    - Feedback visual premium
+  - **My Deposits** (`/deposits`):
+    - Stats cards: Total, Active, Expired, SOL Locked
+    - Tabs: All, Active, Expired
+    - Grid de depósitos com ações
+    - Refund direto na página
+  - **Redirect** `/refund` → `/deposits?tab=expired`
+  - Textos em inglês (padrão hackathon)
+  - Mobile-first responsivo
+  - Carteira Brave removida
 
 ## 🚧 Em progresso
 - (nenhum)
@@ -61,9 +74,10 @@
 4. ~~Adicionar QR code para Magic Link~~ ✅ FEITO
 5. ~~Adicionar expiração + refund~~ ✅ FEITO
 6. ~~Redesign visual estilo Solana~~ ✅ FEITO
-7. (Opcional) Fazer commit e push das mudanças
-8. (Futuro) Taxa de 0.25%
-9. (Futuro) Integração Arcium MPC (Fase 2)
+7. ~~Página My Deposits com dashboard~~ ✅ FEITO
+8. (Opcional) Fazer commit e push das mudanças
+9. (Futuro) Taxa de 0.25%
+10. (Futuro) Integração Arcium MPC (Fase 2)
 
 ## 📊 Informações do Deploy
 
