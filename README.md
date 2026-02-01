@@ -217,16 +217,19 @@ https://solana.com/pt/privacyhack
 🏆 **Private Payments Track** — $15,000
 PrivyLink provides practical relationship privacy using PDA vaults and magic links, offering a UX-first approach to private transfers.
 
-🏆 **Helius Bounty** — $5,000
+🏆 **Helius** — $5,000
 Built on Helius RPC infrastructure for reliable devnet connectivity, enhanced error handling, and fast transaction confirmations. Future webhook integration planned for real-time notifications (Phase 2).
 
 🏆 **QuickNode - Public Benefit Prize** — $3,000
 Open-source privacy tooling with QuickNode RPC support. Flexible multi-provider architecture enables developers to choose their preferred RPC infrastructure.
 
+🏆 **Encrypt.trade** — Privacy Education — $1,000
+Educational approach to privacy: teaching users about on-chain surveillance and financial privacy through simple, intuitive software that anyone can use.
+
 🏆 **Open Track - Pool Prize** — $18,000
 Privacy-focused application for everyday use, making private transfers accessible through familiar UX patterns (magic links + QR codes). Supported by Light Protocol.
 
-**Total Prize Pool:** $41,000
+**Total Prize Pool:** $42,000
 
 ---
 

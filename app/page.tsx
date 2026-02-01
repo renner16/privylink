@@ -746,7 +746,7 @@ export default function Home() {
               </div>
               <span className="text-border-subtle text-2xl hidden md:inline">|</span>
               <div className="text-center">
-                <p className="text-sol-purple font-medium">Helius Bounty</p>
+                <p className="text-sol-purple font-medium">Helius</p>
                 <p className="text-foreground text-xl font-bold">$5,000</p>
               </div>
               <span className="text-border-subtle text-2xl hidden md:inline">|</span>
@@ -759,8 +759,13 @@ export default function Home() {
                 <p className="text-sol-purple font-medium">Open Track</p>
                 <p className="text-foreground text-xl font-bold">$18,000</p>
               </div>
+              <span className="text-border-subtle text-2xl hidden md:inline">|</span>
+              <div className="text-center">
+                <p className="text-sol-purple font-medium">Encrypt.trade</p>
+                <p className="text-foreground text-xl font-bold">$1,000</p>
+              </div>
             </div>
-            <p className="text-sol-green mt-6 text-lg font-bold">Total Prize Pool: $41,000</p>
+            <p className="text-sol-green mt-6 text-lg font-bold">Total Prize Pool: $42,000</p>
           </div>
         </section>
 
