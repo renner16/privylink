@@ -679,9 +679,9 @@ export default function Home() {
             {/* Phase 1 */}
             <AnimatedCard className="card" delay={0}>
               <span className="badge-green mb-4">Complete</span>
-              <h3 className="heading-3 mb-3">Phase 1: PDA Vaults</h3>
+              <h3 className="heading-3 mb-3">Phase 1: MVP</h3>
               <ul className="space-y-2">
-                {["Private deposits with hash", "Secret-based claims", "Auto-expiration & refunds", "Magic links with QR codes"].map((item, i) => (
+                {["Private deposits & secret claims", "Magic links + QR codes", "Manual refunds", "Dashboard (Deposits & Claims)", "Mobile deep links & QR sharing", "Balance checks & clear errors", "Devnet deployment"].map((item, i) => (
                   <li key={i} className="flex items-center gap-2 text-sm text-muted">
                     <svg className="h-4 w-4 flex-shrink-0 text-sol-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -695,9 +695,9 @@ export default function Home() {
             {/* Phase 2 */}
             <AnimatedCard className="card" delay={0.15}>
               <span className="badge-purple mb-4">Planned</span>
-              <h3 className="heading-3 mb-3">Phase 2: Arcium MPC</h3>
+              <h3 className="heading-3 mb-3">Phase 2: Enhanced Privacy</h3>
               <ul className="space-y-2">
-                {["Multi-party computation", "Enhanced unlinkability", "Threshold signatures", "Distributed key generation"].map((item, i) => (
+                {["Arcium MPC", "Encrypted metadata", "Stealth addresses"].map((item, i) => (
                   <li key={i} className="flex items-center gap-2 text-sm text-muted">
                     <span className="h-4 w-4 flex-shrink-0 rounded-full border border-current" />
                     {item}
@@ -709,9 +709,9 @@ export default function Home() {
             {/* Phase 3 */}
             <AnimatedCard className="card" delay={0.3}>
               <span className="badge mb-4">Future</span>
-              <h3 className="heading-3 mb-3">Phase 3: Global Vault + ZK</h3>
+              <h3 className="heading-3 mb-3">Phase 3: Production</h3>
               <ul className="space-y-2">
-                {["Zero-knowledge proofs", "Shared anonymity pool", "Cross-chain privacy", "Full privacy guarantees"].map((item, i) => (
+                {["Mainnet", "Platform fee (0.25%)", "SPL token support", "Batch transfers", "Mobile app"].map((item, i) => (
                   <li key={i} className="flex items-center gap-2 text-sm text-muted">
                     <span className="h-4 w-4 flex-shrink-0 rounded-full border border-current" />
                     {item}
@@ -771,6 +771,33 @@ export default function Home() {
                   </svg>
                 </a>
               </div>
+            </div>
+
+            {/* Competing For */}
+            <div className="mt-8 pt-8 border-t border-border-subtle">
+              <h4 className="text-center text-sm font-medium text-muted mb-4">Competing For</h4>
+              <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-muted">
+                <span className="flex items-center gap-1.5">
+                  <span className="text-sol-purple">Private Payments</span>
+                  <span className="text-foreground font-medium">$15,000</span>
+                </span>
+                <span className="text-border-subtle hidden sm:inline">|</span>
+                <span className="flex items-center gap-1.5">
+                  <span className="text-sol-purple">Helius Bounty</span>
+                  <span className="text-foreground font-medium">$5,000</span>
+                </span>
+                <span className="text-border-subtle hidden sm:inline">|</span>
+                <span className="flex items-center gap-1.5">
+                  <span className="text-sol-purple">QuickNode</span>
+                  <span className="text-foreground font-medium">$3,000</span>
+                </span>
+                <span className="text-border-subtle hidden sm:inline">|</span>
+                <span className="flex items-center gap-1.5">
+                  <span className="text-sol-purple">Open Track</span>
+                  <span className="text-foreground font-medium">$18,000</span>
+                </span>
+              </div>
+              <p className="text-center text-xs text-sol-green mt-3 font-medium">Total Prize Pool: $41,000</p>
             </div>
 
             <p className="mt-8 text-center text-xs text-muted">

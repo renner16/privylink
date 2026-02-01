@@ -1,7 +1,7 @@
 # PrivyLink — Progresso
 
 ## Última atualização
-31/01/2026 21:00
+31/01/2026 22:30
 
 ## ✅ Concluído
 - Estrutura base do projeto (Next.js 16 + Anchor)
@@ -69,6 +69,13 @@
   - **Revisão final** como judge de hackathon (README, contrato, demo)
   - **Nome co-autora corrigido** (Geovana Marques)
   - **Favicon restaurado** para original do template Solana
+  - **Mensagens de erro padronizadas** para inglês
+  - **Suporte QuickNode RPC** adicionado (elegível para bounty $3k)
+  - **Seção Hackathon no README** atualizada (4 bounties, total $41k)
+  - **Footer com provider RPC** dinâmico (Helius/QuickNode/Public Devnet)
+- **[31/01] ALINHAMENTO SITE/README:**
+  - **Roadmap atualizado** no site (3 fases conforme README)
+  - **Seção "Competing For"** no footer (4 bounties com valores)
 
 ## 🚧 Em progresso
 - (nenhum)
@@ -97,5 +104,5 @@
 | Program ID | `98WwJxc1aAeqGWuaouQntJYmdQEnELntf9BqKXD3o34W` |
 | Network | Devnet |
 | Upgrade Authority | `88rk9ofbfoh8iBLYX9NNS9NKCNZbbAJgfYppzNUd8LYU` |
-| RPC | Helius (devnet.helius-rpc.com) |
+| RPC | QuickNode > Helius > Public Devnet |
 | GitHub | github.com/renner16/privylink |
