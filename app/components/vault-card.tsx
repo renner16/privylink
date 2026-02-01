@@ -375,20 +375,20 @@ export function VaultCard() {
         msgLower.includes("no record of a prior credit") ||
         msgLower.includes("lamports")
       ) {
-        msg = "Saldo insuficiente. Verifique se você tem SOL suficiente para o depósito + taxa de rede (~0.002 SOL).";
+        msg = "Insufficient balance. Please ensure you have enough SOL for the deposit + network fee (~0.002 SOL).";
       } else if (
         msgLower.includes("mainnet") ||
         msgLower.includes("mynet") ||
         msgLower.includes("wrong network") ||
         msgLower.includes("network mismatch")
       ) {
-        msg = "Rede incorreta. Configure sua carteira para Devnet (Settings → Network → Devnet).";
+        msg = "Wrong network. Please switch to Devnet (Settings → Network → Devnet).";
       } else if (msgLower.includes("cancelled") || msgLower.includes("canceled") || msgLower.includes("rejected") || msgLower.includes("denied")) {
-        msg = "Transação cancelada. Se você tem outra página aberta usando a carteira, feche-a e tente novamente.";
+        msg = "Transaction cancelled. If another tab is using your wallet, close it and try again.";
       } else if (msgLower.includes("already pending") || msgLower.includes("busy") || msgLower.includes("locked")) {
-        msg = "Outra página está usando a carteira. Feche-a para continuar.";
+        msg = "Wallet is busy. Close other tabs and try again.";
       } else if (msgLower.includes("blockhash") || msgLower.includes("expired")) {
-        msg = "Transação expirou. Tente novamente.";
+        msg = "Transaction expired. Please try again.";
       }
       setTxStatus(msg);
       setTxStatusType("error");
@@ -399,7 +399,7 @@ export function VaultCard() {
     if (!walletAddress || !claimDepositId || !claimSecret || !claimDepositor || !wallet) return;
 
     try {
-      setTxStatus("Verificando saldo...");
+      setTxStatus("Checking balance...");
       setTxStatusType("info");
 
       // Verificar saldo ANTES de tentar a transação
@@ -416,7 +416,7 @@ export function VaultCard() {
 
         // Precisa de pelo menos 0.001 SOL para pagar taxa de rede
         if (balanceSOL < 0.001) {
-          setTxStatus(`Saldo insuficiente para pagar taxa de rede. Seu saldo: ${balanceSOL.toFixed(6)} SOL. Mínimo necessário: ~0.001 SOL.`);
+          setTxStatus(`Insufficient balance for network fee. Your balance: ${balanceSOL.toFixed(6)} SOL. Minimum required: ~0.001 SOL.`);
           setTxStatusType("error");
           return;
         }
@@ -558,20 +558,20 @@ export function VaultCard() {
         msgLower.includes("no record of a prior credit") ||
         msgLower.includes("lamports")
       ) {
-        msg = "Saldo insuficiente para pagar a taxa de rede. Adicione SOL à sua carteira (mínimo ~0.001 SOL).";
+        msg = "Insufficient balance for network fee. Please add SOL to your wallet (minimum ~0.001 SOL).";
       } else if (
         msgLower.includes("mainnet") ||
         msgLower.includes("mynet") ||
         msgLower.includes("wrong network") ||
         msgLower.includes("network mismatch")
       ) {
-        msg = "Rede incorreta. Configure sua carteira para Devnet (Settings → Network → Devnet).";
+        msg = "Wrong network. Please switch to Devnet (Settings → Network → Devnet).";
       } else if (msgLower.includes("cancelled") || msgLower.includes("canceled") || msgLower.includes("rejected") || msgLower.includes("denied")) {
-        msg = "Transação cancelada. Se você tem outra página aberta usando a carteira, feche-a e tente novamente.";
+        msg = "Transaction cancelled. If another tab is using your wallet, close it and try again.";
       } else if (msgLower.includes("already pending") || msgLower.includes("busy") || msgLower.includes("locked")) {
-        msg = "Outra página está usando a carteira. Feche-a para continuar.";
+        msg = "Wallet is busy. Close other tabs and try again.";
       } else if (msgLower.includes("blockhash") || msgLower.includes("expired")) {
-        msg = "Transação expirou. Tente novamente.";
+        msg = "Transaction expired. Please try again.";
       }
       setTxStatus(msg);
       setTxStatusType("error");
@@ -615,7 +615,7 @@ export function VaultCard() {
             <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-sol-purple/30 border-t-sol-purple"></div>
             <p className="text-lg font-medium text-foreground mb-2">Processando transação...</p>
             <p className="text-sm text-muted text-center max-w-xs">
-              {txStatus || "Aguarde enquanto a transação é confirmada na blockchain."}
+              {txStatus || "Please wait while the transaction is confirmed on the blockchain."}
             </p>
           </div>
         )}

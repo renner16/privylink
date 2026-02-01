@@ -218,20 +218,20 @@ export default function Home() {
         console.error("Wallet connection failed:", err);
         const errorMsg = err?.message?.toLowerCase() || "";
         if (errorMsg.includes("already pending") || errorMsg.includes("resource") || errorMsg.includes("busy") || errorMsg.includes("locked")) {
-          setConnectionError("Outra página está usando a carteira. Feche-a para continuar.");
+          setConnectionError("Wallet is busy. Close other tabs and try again.");
         } else if (errorMsg.includes("rejected") || errorMsg.includes("denied") || errorMsg.includes("cancelled")) {
-          setConnectionError("Conexão rejeitada pelo usuário.");
+          setConnectionError("Connection rejected by user.");
         } else {
-          setConnectionError("Erro ao conectar. Tente novamente.");
+          setConnectionError("Connection failed. Please try again.");
         }
       }
     } else if (isDetectedNow) {
       // Try direct connection (fallback)
       try {
-        // Mostrar mensagem enquanto aguarda aprovação (importante para mobile)
+        // Show message while waiting for approval (important for mobile)
         const isMobile = isMobileDevice();
         if (isMobile) {
-          setConnectionError("Aguardando aprovação... Minimize o navegador para ver a solicitação.");
+          setConnectionError("Waiting for approval... Minimize browser to see the request.");
         }
 
         if (walletOption.id === "solflare" && (window as any).solflare) {
@@ -251,11 +251,11 @@ export default function Home() {
         console.error("Direct wallet connection failed:", err);
         const errorMsg = err?.message?.toLowerCase() || "";
         if (errorMsg.includes("already pending") || errorMsg.includes("resource") || errorMsg.includes("busy") || errorMsg.includes("locked") || errorMsg.includes("already processing")) {
-          setConnectionError("Outra página está usando a carteira. Feche-a para continuar.");
+          setConnectionError("Wallet is busy. Close other tabs and try again.");
         } else if (errorMsg.includes("rejected") || errorMsg.includes("denied") || errorMsg.includes("cancelled")) {
-          setConnectionError("Conexão rejeitada pelo usuário.");
+          setConnectionError("Connection rejected by user.");
         } else {
-          setConnectionError("Erro ao conectar. Tente novamente.");
+          setConnectionError("Connection failed. Please try again.");
         }
       }
     } else {
@@ -264,7 +264,7 @@ export default function Home() {
       const inWalletBrowser = isInWalletBrowser();
 
       if (isMobile && !inWalletBrowser) {
-        // Mobile + navegador externo = usar deep link para abrir no browser da carteira
+        // Mobile + external browser = use deep link to open in wallet browser
         const deepLink = getWalletDeepLink(walletOption.id);
         if (deepLink) {
           window.location.href = deepLink;
@@ -272,9 +272,9 @@ export default function Home() {
         }
       }
 
-      // Desktop sem extensão
+      // Desktop without extension
       if (!isMobile) {
-        setConnectionError(`Extensão ${walletOption.name} não detectada. Instale a extensão do navegador e recarregue a página.`);
+        setConnectionError(`${walletOption.name} extension not detected. Please install it and reload the page.`);
         window.open(walletOption.downloadUrl, "_blank");
         return;
       }
