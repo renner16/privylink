@@ -199,111 +199,93 @@ export default function Home() {
     setDetectedWallets(detected);
   }, []);
 
-  // Helper for direct wallet connection (fallback)
-  const tryDirectConnection = async (walletOption: typeof WALLET_OPTIONS[0]): Promise<boolean> => {
-    try {
-      if (walletOption.id === "solflare") {
-        const solflare = (window as any).solflare;
-        if (solflare) {
-          // Solflare pode precisar de um pequeno delay
-          await new Promise(resolve => setTimeout(resolve, 100));
-          await solflare.connect();
-          setConnectionError(null);
-          window.location.reload();
-          return true;
-        }
-      } else if (walletOption.id === "phantom") {
-        const phantom = (window as any).phantom?.solana;
-        if (phantom) {
-          await phantom.connect();
-          setConnectionError(null);
-          window.location.reload();
-          return true;
-        }
-      }
-    } catch (err: any) {
-      console.error("Direct connection failed:", err);
-      const errorMsg = err?.message?.toLowerCase() || "";
-      if (errorMsg.includes("rejected") || errorMsg.includes("denied") || errorMsg.includes("cancelled")) {
-        setConnectionError("Connection rejected by user.");
-        return true; // Don't show generic error
-      }
-      if (errorMsg.includes("already pending") || errorMsg.includes("busy") || errorMsg.includes("locked")) {
-        setConnectionError("Wallet is busy. Close other tabs and try again.");
-        return true; // Don't show generic error
-      }
-    }
-    return false;
-  };
-
   // Helper to connect wallet
   const handleWalletClick = async (walletOption: typeof WALLET_OPTIONS[0]) => {
     setConnectionError(null);
 
     // Check for connector first (library method)
-    // Try multiple name variations for better compatibility
-    const connector = connectors.find((c) => {
-      const name = c.name.toLowerCase();
-      const id = walletOption.id.toLowerCase();
-      return name.includes(id) || name === id || name.replace(/\s+/g, '').includes(id);
-    });
-
-    // Real-time detection - check both global object and connector
-    const isDetectedNow = walletOption.detectGlobal() || !!connector;
+    const connector = connectors.find(
+      (c) => c.name.toLowerCase().includes(walletOption.id)
+    );
 
     if (connector) {
       // Use library connector (preferred method)
       try {
         await connect(connector.id);
+        return; // Success - library handles the rest
       } catch (err: any) {
         console.error("Wallet connection failed:", err);
         const errorMsg = err?.message?.toLowerCase() || "";
         if (errorMsg.includes("already pending") || errorMsg.includes("resource") || errorMsg.includes("busy") || errorMsg.includes("locked")) {
           setConnectionError("Wallet is busy. Close other tabs and try again.");
+          return;
         } else if (errorMsg.includes("rejected") || errorMsg.includes("denied") || errorMsg.includes("cancelled")) {
           setConnectionError("Connection rejected by user.");
-        } else {
-          // Try direct connection as fallback
-          const directConnect = await tryDirectConnection(walletOption);
-          if (!directConnect) {
-            setConnectionError("Connection failed. Please try again.");
-          }
-        }
-      }
-    } else if (walletOption.detectGlobal()) {
-      // Try direct connection (wallet detected but no library connector)
-      const isMobile = isMobileDevice();
-      if (isMobile) {
-        setConnectionError("Waiting for approval... Minimize browser to see the request.");
-      }
-      const success = await tryDirectConnection(walletOption);
-      if (!success) {
-        setConnectionError("Connection failed. Please try again.");
-      }
-    } else {
-      // Wallet not detected - check if mobile
-      const isMobile = isMobileDevice();
-      const inWalletBrowser = isInWalletBrowser();
-
-      if (isMobile && !inWalletBrowser) {
-        // Mobile + external browser = use deep link to open in wallet browser
-        const deepLink = getWalletDeepLink(walletOption.id);
-        if (deepLink) {
-          window.location.href = deepLink;
           return;
         }
+        // Fall through to try direct connection
       }
+    }
 
-      // Desktop without extension
-      if (!isMobile) {
-        setConnectionError(`${walletOption.name} extension not detected. Please install it and reload the page.`);
-        window.open(walletOption.downloadUrl, "_blank");
+    // Try direct connection if wallet is detected globally
+    const isDetectedNow = walletOption.detectGlobal();
+    if (isDetectedNow) {
+      try {
+        const isMobile = isMobileDevice();
+        if (isMobile) {
+          setConnectionError("Waiting for approval... Minimize browser to see the request.");
+        }
+
+        if (walletOption.id === "solflare" && (window as any).solflare) {
+          const solflare = (window as any).solflare;
+          await solflare.connect();
+          setConnectionError(null);
+          window.location.reload();
+          return;
+        } else if (walletOption.id === "phantom" && (window as any).phantom?.solana) {
+          const phantom = (window as any).phantom.solana;
+          await phantom.connect();
+          setConnectionError(null);
+          window.location.reload();
+          return;
+        }
+      } catch (err: any) {
+        console.error("Direct wallet connection failed:", err);
+        const errorMsg = err?.message?.toLowerCase() || "";
+        if (errorMsg.includes("already pending") || errorMsg.includes("resource") || errorMsg.includes("busy") || errorMsg.includes("locked") || errorMsg.includes("already processing")) {
+          setConnectionError("Wallet is busy. Close other tabs and try again.");
+          return;
+        } else if (errorMsg.includes("rejected") || errorMsg.includes("denied") || errorMsg.includes("cancelled")) {
+          setConnectionError("Connection rejected by user.");
+          return;
+        }
+        setConnectionError("Connection failed. Please try again.");
         return;
       }
-
-      // Fallback = abrir página de download
-      window.open(walletOption.downloadUrl, "_blank");
     }
+
+    // Wallet not detected - check if mobile
+    const isMobile = isMobileDevice();
+    const inWalletBrowser = isInWalletBrowser();
+
+    if (isMobile && !inWalletBrowser) {
+      // Mobile + external browser = use deep link to open in wallet browser
+      const deepLink = getWalletDeepLink(walletOption.id);
+      if (deepLink) {
+        window.location.href = deepLink;
+        return;
+      }
+    }
+
+    // Desktop without extension
+    if (!isMobile) {
+      setConnectionError(`${walletOption.name} extension not detected. Please install it and reload the page.`);
+      window.open(walletOption.downloadUrl, "_blank");
+      return;
+    }
+
+    // Fallback = abrir página de download
+    window.open(walletOption.downloadUrl, "_blank");
   };
 
   // Check if a wallet is available (via connector or global detection in real-time)
