@@ -22,6 +22,14 @@ The receiver claims funds by proving knowledge of the secret — preserving **re
 
 ---
 
+## The Problem
+
+Traditional crypto transfers expose sender–receiver relationships on-chain, creating permanent public records of financial connections. This compromises financial privacy for everyday users who simply want to send funds without broadcasting their social or business relationships.
+
+For example, sending SOL to a friend permanently exposes that relationship on-chain, even when privacy is expected.
+
+---
+
 ## TL;DR (60 seconds)
 
 - Send SOL → get a magic link + secret code
@@ -97,6 +105,7 @@ Sender ──▶ Vault PDA ──▶ Receiver
 - Secret-based claims (SHA-256 hash verification)
 - Configurable expiration (1h to 30 days)
 - Manual refund for expired deposits
+- 📱 **Mobile Deep Links:** Open claim links directly inside Phantom and Solflare wallets
 
 ### UX & Mobile
 - Wallet balance display and validation
@@ -163,7 +172,7 @@ No ZK circuits, no trusted setup, no heavy cryptography.
 - **Styling:** Tailwind CSS
 - **RPC:** Helius
 - **Deployment:** Vercel
-- **Network:** Devnet
+- **Network:** Solana Devnet (testnet deployment)
 
 ---
 
