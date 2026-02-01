@@ -204,7 +204,6 @@ The project also supports QuickNode RPC as an alternative, demonstrating flexibl
 - Platform fee (0.25%)
 - SPL token support
 - Batch transfers
-- Mobile app
 
 ---
 

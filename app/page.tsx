@@ -711,7 +711,7 @@ export default function Home() {
               <span className="badge mb-4">Future</span>
               <h3 className="heading-3 mb-3">Phase 3: Production</h3>
               <ul className="space-y-2">
-                {["Mainnet", "Platform fee (0.25%)", "SPL token support", "Batch transfers", "Mobile app"].map((item, i) => (
+                {["Mainnet", "Platform fee (0.25%)", "SPL token support", "Batch transfers"].map((item, i) => (
                   <li key={i} className="flex items-center gap-2 text-sm text-muted">
                     <span className="h-4 w-4 flex-shrink-0 rounded-full border border-current" />
                     {item}
