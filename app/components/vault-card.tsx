@@ -16,6 +16,7 @@ import {
   VAULT_PROGRAM_ADDRESS,
 } from "../generated/vault";
 import { QRCodeSVG } from "qrcode.react";
+import { getRpcEndpoint } from "../lib/rpc-config";
 
 const LAMPORTS_PER_SOL = 1_000_000_000n;
 
@@ -154,7 +155,7 @@ export function VaultCard() {
     }
     const fetchBalance = async () => {
       try {
-        const RPC = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || "https://api.devnet.solana.com";
+        const RPC = getRpcEndpoint();
         const res = await fetch(RPC, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -248,7 +249,7 @@ export function VaultCard() {
   useEffect(() => {
     const checkProgram = async () => {
       try {
-        const RPC = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || "https://api.devnet.solana.com";
+        const RPC = getRpcEndpoint();
         const res = await fetch(RPC, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -403,7 +404,7 @@ export function VaultCard() {
       setTxStatusType("info");
 
       // Verificar saldo ANTES de tentar a transação
-      const RPC = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || "https://api.devnet.solana.com";
+      const RPC = getRpcEndpoint();
       try {
         const balanceRes = await fetch(RPC, {
           method: "POST",
@@ -444,7 +445,7 @@ export function VaultCard() {
       // Fetch deposit amount before claiming
       let claimAmount = 0;
       try {
-        const RPC = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || "https://api.devnet.solana.com";
+        const RPC = getRpcEndpoint();
         const res = await fetch(RPC, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -518,7 +519,7 @@ export function VaultCard() {
 
       // Refresh wallet balance after claim
       try {
-        const RPC = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || "https://api.devnet.solana.com";
+        const RPC = getRpcEndpoint();
         const res = await fetch(RPC, {
           method: "POST",
           headers: { "Content-Type": "application/json" },

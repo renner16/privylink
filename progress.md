@@ -1,7 +1,7 @@
 # PrivyLink — Progresso
 
 ## Última atualização
-31/01/2026 16:30
+31/01/2026 21:00
 
 ## ✅ Concluído
 - Estrutura base do projeto (Next.js 16 + Anchor)
@@ -63,6 +63,12 @@
   - **Erro claro para múltiplas páginas**: "Outra página está usando a carteira. Feche-a para continuar."
   - **Tratamento de erros** em Send/Claim (cancelled, busy, locked, insufficient)
   - **Conexão de wallet no primeiro clique** (prioriza connector da biblioteca)
+- **[31/01] FINALIZAÇÃO HACKATHON:**
+  - **Screenshots mobile** reorganizadas (menores, 2 por linha com títulos)
+  - **Screenshots cortadas** para melhor visualização
+  - **Revisão final** como judge de hackathon (README, contrato, demo)
+  - **Nome co-autora corrigido** (Geovana Marques)
+  - **Favicon restaurado** para original do template Solana
 
 ## 🚧 Em progresso
 - (nenhum)
@@ -78,10 +84,11 @@
 - (nenhum)
 
 ## 📋 Próximos passos
-1. Gravar vídeo demo (3 minutos)
-2. Submeter no hackathon (deadline: 1 de Fevereiro 2026)
-3. (Futuro) Taxa de 0.25%
-4. (Futuro) Integração Arcium MPC (Fase 2)
+1. ✅ **PROJETO PRONTO PARA SUBMISSÃO**
+2. Gravar vídeo demo (máx 3 minutos)
+3. Submeter no hackathon (avaliação até 10/02/2026)
+4. (Futuro) Taxa de 0.25%
+5. (Futuro) Integração Arcium MPC (Fase 2)
 
 ## 📊 Informações do Deploy
 

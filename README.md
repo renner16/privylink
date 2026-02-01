@@ -170,7 +170,7 @@ No ZK circuits, no trusted setup, no heavy cryptography.
 - **Smart Contract:** Solana (Anchor)
 - **Frontend:** Next.js + TypeScript
 - **Styling:** Tailwind CSS
-- **RPC:** Helius
+- **RPC:** Helius (default) / QuickNode (optional)
 - **Deployment:** Vercel
 - **Network:** Solana Devnet (testnet deployment)
 
@@ -213,6 +213,7 @@ https://solana.com/pt/privacyhack
 Competing for:
 - Private Payments Track — $15,000
 - Helius Bounty — $5,000
+- QuickNode Public Benefit Prize — $3,000
 
 ---
 

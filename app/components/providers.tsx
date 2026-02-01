@@ -4,13 +4,10 @@ import { SolanaProvider } from "@solana/react-hooks";
 import { PropsWithChildren } from "react";
 
 import { autoDiscover, createClient } from "@solana/client";
-
-// Get RPC endpoint from environment variable, default to devnet
-const RPC_ENDPOINT =
-  process.env.NEXT_PUBLIC_SOLANA_RPC_URL || "https://api.devnet.solana.com";
+import { getRpcEndpoint } from "../lib/rpc-config";
 
 const client = createClient({
-  endpoint: RPC_ENDPOINT,
+  endpoint: getRpcEndpoint(),
   walletConnectors: autoDiscover(),
 });
 

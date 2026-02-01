@@ -1,6 +1,7 @@
 "use client";
 import { useWalletConnection } from "@solana/react-hooks";
 import { VaultCard } from "./components/vault-card";
+import { getRpcProviderName } from "./lib/rpc-config";
 import Link from "next/link";
 import { useState, useEffect, useRef, ReactNode } from "react";
 
@@ -751,6 +752,8 @@ export default function Home() {
                 >
                   <span className="status-online" />
                   <span className="text-sol-green">Devnet</span>
+                  <span className="text-muted/50">via</span>
+                  <span className="text-sol-purple">{getRpcProviderName()}</span>
                   <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                   </svg>

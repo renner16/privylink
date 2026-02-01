@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, Suspense, useRef } from "react";
 import { useWalletConnection, useSendTransaction } from "@solana/react-hooks";
 import { AccountRole, type Address, getProgramDerivedAddress, getAddressEncoder } from "@solana/kit";
 import { VAULT_PROGRAM_ADDRESS } from "../generated/vault";
+import { getRpcEndpoint } from "../lib/rpc-config";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
@@ -116,7 +117,7 @@ function DepositsContent() {
     setIsLoading(true);
     setError(null);
 
-    const RPC = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || "https://api.devnet.solana.com";
+    const RPC = getRpcEndpoint();
 
     try {
       const response = await fetch(RPC, {
