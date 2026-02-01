@@ -210,10 +210,21 @@ PrivyLink uses Helius RPC to ensure reliable and fast access to Solana data, pro
 **Solana Privacy Hack 2026**
 https://solana.com/pt/privacyhack
 
-Competing for:
-- Private Payments Track — $15,000
-- Helius Bounty — $5,000
-- QuickNode Public Benefit Prize — $3,000
+### Competing For
+
+🏆 **Private Payments Track** — $15,000
+PrivyLink provides practical relationship privacy using PDA vaults and magic links, offering a UX-first approach to private transfers.
+
+🏆 **Helius Bounty** — $5,000
+Built on Helius RPC infrastructure for reliable devnet connectivity, enhanced error handling, and fast transaction confirmations. Future webhook integration planned for real-time notifications (Phase 2).
+
+🏆 **QuickNode - Public Benefit Prize** — $3,000
+Open-source privacy tooling with QuickNode RPC support. Flexible multi-provider architecture enables developers to choose their preferred RPC infrastructure.
+
+🏆 **Open Track - Pool Prize** — $18,000
+Privacy-focused application for everyday use, making private transfers accessible through familiar UX patterns (magic links + QR codes). Supported by Light Protocol.
+
+**Total Prize Pool:** $41,000
 
 ---
 
