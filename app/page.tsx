@@ -720,6 +720,33 @@ export default function Home() {
               </ul>
             </AnimatedCard>
           </div>
+
+          {/* Competing For */}
+          <div className="mt-16 text-center">
+            <h3 className="text-sm font-medium text-muted mb-6">Competing For</h3>
+            <div className="flex flex-wrap items-center justify-center gap-4 md:gap-8">
+              <div className="text-center">
+                <p className="text-sol-purple font-medium">Private Payments</p>
+                <p className="text-foreground text-xl font-bold">$15,000</p>
+              </div>
+              <span className="text-border-subtle text-2xl hidden md:inline">|</span>
+              <div className="text-center">
+                <p className="text-sol-purple font-medium">Helius Bounty</p>
+                <p className="text-foreground text-xl font-bold">$5,000</p>
+              </div>
+              <span className="text-border-subtle text-2xl hidden md:inline">|</span>
+              <div className="text-center">
+                <p className="text-sol-purple font-medium">QuickNode</p>
+                <p className="text-foreground text-xl font-bold">$3,000</p>
+              </div>
+              <span className="text-border-subtle text-2xl hidden md:inline">|</span>
+              <div className="text-center">
+                <p className="text-sol-purple font-medium">Open Track</p>
+                <p className="text-foreground text-xl font-bold">$18,000</p>
+              </div>
+            </div>
+            <p className="text-sol-green mt-6 text-lg font-bold">Total Prize Pool: $41,000</p>
+          </div>
         </section>
 
         {/* ==================== FOOTER ==================== */}
@@ -771,33 +798,6 @@ export default function Home() {
                   </svg>
                 </a>
               </div>
-            </div>
-
-            {/* Competing For */}
-            <div className="mt-8 pt-8 border-t border-border-subtle">
-              <h4 className="text-center text-sm font-medium text-muted mb-4">Competing For</h4>
-              <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-muted">
-                <span className="flex items-center gap-1.5">
-                  <span className="text-sol-purple">Private Payments</span>
-                  <span className="text-foreground font-medium">$15,000</span>
-                </span>
-                <span className="text-border-subtle hidden sm:inline">|</span>
-                <span className="flex items-center gap-1.5">
-                  <span className="text-sol-purple">Helius Bounty</span>
-                  <span className="text-foreground font-medium">$5,000</span>
-                </span>
-                <span className="text-border-subtle hidden sm:inline">|</span>
-                <span className="flex items-center gap-1.5">
-                  <span className="text-sol-purple">QuickNode</span>
-                  <span className="text-foreground font-medium">$3,000</span>
-                </span>
-                <span className="text-border-subtle hidden sm:inline">|</span>
-                <span className="flex items-center gap-1.5">
-                  <span className="text-sol-purple">Open Track</span>
-                  <span className="text-foreground font-medium">$18,000</span>
-                </span>
-              </div>
-              <p className="text-center text-xs text-sol-green mt-3 font-medium">Total Prize Pool: $41,000</p>
             </div>
 
             <p className="mt-8 text-center text-xs text-muted">
