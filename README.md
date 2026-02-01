@@ -174,6 +174,10 @@ No ZK circuits, no trusted setup, no heavy cryptography.
 - **Deployment:** Vercel
 - **Network:** Solana Devnet (testnet deployment)
 
+### Why Helius?
+
+PrivyLink uses Helius RPC to ensure reliable and fast access to Solana data, providing a stable demo experience on Devnet. The project depends on consistent RPC performance for deposit creation, claim flows, and dashboard updates. Future roadmap includes deeper integration with Helius infrastructure for real-time notifications and enhanced transaction monitoring.
+
 ---
 
 ## Roadmap
