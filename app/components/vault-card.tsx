@@ -245,6 +245,15 @@ export function VaultCard() {
     }
   }, []);
 
+  // Listen for tab change events from parent
+  useEffect(() => {
+    const handleTabChange = (e: CustomEvent<{ tab: 'create' | 'claim' }>) => {
+      setActiveTab(e.detail.tab);
+    };
+    window.addEventListener('privylink-tab-change', handleTabChange as EventListener);
+    return () => window.removeEventListener('privylink-tab-change', handleTabChange as EventListener);
+  }, []);
+
   // Check program deployment
   useEffect(() => {
     const checkProgram = async () => {

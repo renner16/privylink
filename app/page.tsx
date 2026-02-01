@@ -468,12 +468,24 @@ export default function Home() {
             </p>
 
             <div className="flex flex-wrap items-center justify-center gap-4">
-              <a href="?tab=send#send" className="btn-primary px-8 py-4 text-base">
+              <button
+                onClick={() => {
+                  window.dispatchEvent(new CustomEvent('privylink-tab-change', { detail: { tab: 'create' } }));
+                  document.getElementById('send')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="btn-primary px-8 py-4 text-base"
+              >
                 Send Privately
-              </a>
-              <a href="?tab=claim#send" className="btn-secondary px-8 py-4 text-base">
+              </button>
+              <button
+                onClick={() => {
+                  window.dispatchEvent(new CustomEvent('privylink-tab-change', { detail: { tab: 'claim' } }));
+                  document.getElementById('send')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="btn-secondary px-8 py-4 text-base"
+              >
                 Claim Transfer
-              </a>
+              </button>
             </div>
           </div>
         </section>
