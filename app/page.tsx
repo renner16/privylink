@@ -560,7 +560,7 @@ export default function Home() {
         {/* ==================== WHY PRIVYLINK (COMPARISON) ==================== */}
         <section className="container-main py-24 scroll-mt-20">
           <div className="mb-16 text-center">
-            <h2 className="heading-2 mb-4">Why PrivyLink?</h2>
+            <h2 className="heading-2 mb-4">The Privacy Problem</h2>
             <p className="body-large mx-auto max-w-xl">
               Traditional transfers expose your financial relationships
             </p>
