@@ -802,7 +802,7 @@ export default function LearnPage() {
               <ul className="space-y-3">
                 <li>
                   <a
-                    href="https://github.com/nickytonline/awesome-solana-privacy"
+                    href="https://github.com/catmcgee/awesome-privacy-on-solana"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-sm text-muted hover:text-sol-purple transition-colors flex items-center gap-2"
