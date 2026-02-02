@@ -1,7 +1,7 @@
 # PrivyLink — Progresso
 
 ## Última atualização
-31/01/2026 22:30
+02/02/2026 00:30
 
 ## ✅ Concluído
 - Estrutura base do projeto (Next.js 16 + Anchor)
@@ -76,6 +76,15 @@
 - **[31/01] ALINHAMENTO SITE/README:**
   - **Roadmap atualizado** no site (3 fases conforme README)
   - **Seção "Competing For"** no footer (4 bounties com valores)
+- **[02/02] PÁGINA /LEARN (Bounty Encrypt.trade $1k):**
+  - **Página educacional completa** sobre privacidade crypto
+  - **Seções:** Hero, The Problem (On-Chain Surveillance), Types of Privacy, How to Protect Yourself, Privacy Tools Comparison, Myths vs Reality, Additional Resources, CTA
+  - **Cards interativos** (Myths expandíveis com click)
+  - **Comparação honesta** de ferramentas (PrivyLink, Encifher, Light Protocol)
+  - **Dicas práticas** para proteger privacidade
+  - **Links externos** para recursos educacionais
+  - **Link "Learn"** adicionado no header da homepage
+  - **Mesmo design system** da página principal (scroll reveal, gradients, cards)
 
 ## 🚧 Em progresso
 - (nenhum)
@@ -92,10 +101,11 @@
 
 ## 📋 Próximos passos
 1. ✅ **PROJETO PRONTO PARA SUBMISSÃO**
-2. Gravar vídeo demo (máx 3 minutos)
-3. Submeter no hackathon (avaliação até 10/02/2026)
-4. (Futuro) Taxa de 0.25%
-5. (Futuro) Integração Arcium MPC (Fase 2)
+2. ✅ **Página /learn criada** (Bounty Encrypt.trade $1k - conteúdo educacional)
+3. Gravar vídeo demo (máx 3 minutos)
+4. Submeter no hackathon (avaliação até 10/02/2026)
+5. (Futuro) Taxa de 0.25%
+6. (Futuro) Integração Arcium MPC (Fase 2)
 
 ## 📊 Informações do Deploy
 

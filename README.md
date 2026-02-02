@@ -124,6 +124,14 @@ Sender ──▶ Vault PDA ──▶ Receiver
 - SOL totals (locked & received)
 - One-click refund for expired deposits
 
+### 📚 Educational Content
+- Comprehensive `/learn` page explaining on-chain surveillance
+- Privacy types comparison (Relationship, Amount, Full Anonymity)
+- Practical protection tips without technical jargon
+- Honest comparison of privacy tools (PrivyLink, Encifher, Light Protocol)
+- "Privacy for humans" approach - accessible for everyone
+- Available at: [privylink.vercel.app/learn](https://privylink.vercel.app/learn)
+
 ---
 
 ## Privacy Model
@@ -224,7 +232,7 @@ Built on Helius RPC infrastructure for reliable devnet connectivity, enhanced er
 Open-source privacy tooling with QuickNode RPC support. Flexible multi-provider architecture enables developers to choose their preferred RPC infrastructure.
 
 🏆 **Encrypt.trade** — Privacy Education — $1,000
-Educational approach to privacy: teaching users about on-chain surveillance and financial privacy through simple, intuitive software that anyone can use.
+Educational approach to privacy: comprehensive `/learn` page explains on-chain surveillance, privacy types, and protection strategies using concrete examples instead of abstract cryptography. "Privacy for humans" philosophy - no jargon, accessible for everyone. Visit [/learn](https://privylink.vercel.app/learn) for full privacy guide.
 
 🏆 **Open Track - Pool Prize** — $18,000
 Privacy-focused application for everyday use, making private transfers accessible through familiar UX patterns (magic links + QR codes). Supported by Light Protocol.

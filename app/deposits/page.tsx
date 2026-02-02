@@ -65,7 +65,7 @@ interface ClaimRecord {
 }
 
 function DepositsContent() {
-  const { wallet, status } = useWalletConnection();
+  const { wallet, status, disconnect } = useWalletConnection();
   const { send, isSending } = useSendTransaction();
   const searchParams = useSearchParams();
 
@@ -363,6 +363,14 @@ function DepositsContent() {
             <Link href="/" className="flex items-center">
               <img src="/logo-privylink.png" alt="PrivyLink" className="h-8" />
             </Link>
+            <div className="flex items-center gap-4">
+              <Link href="/" className="text-sm text-muted hover:text-foreground transition-colors">
+                Home
+              </Link>
+              <Link href="/learn" className="text-sm text-muted hover:text-foreground transition-colors">
+                Learn
+              </Link>
+            </div>
           </div>
         </header>
 
@@ -415,13 +423,25 @@ function DepositsContent() {
           </Link>
 
           <div className="flex items-center gap-4">
+            <Link href="/" className="text-sm text-muted hover:text-foreground transition-colors">
+              Home
+            </Link>
+            <Link href="/learn" className="text-sm text-muted hover:text-foreground transition-colors">
+              Learn
+            </Link>
+            <span className="text-sm text-sol-purple font-medium">
+              My Transfers
+            </span>
             <div className="hidden items-center gap-2 sm:flex">
               <span className="status-online" />
               <span className="text-xs font-medium text-sol-green">Devnet</span>
             </div>
-            <code className="hidden rounded-md bg-bg-elevated px-3 py-1.5 font-mono text-xs text-white lg:block">
+            <code className="hidden rounded-md bg-bg-elevated px-3 py-1.5 font-mono text-xs text-muted lg:block">
               {walletAddress?.toString().slice(0, 4)}...{walletAddress?.toString().slice(-4)}
             </code>
+            <button onClick={() => disconnect()} className="btn-ghost text-xs">
+              Disconnect
+            </button>
           </div>
         </div>
       </header>

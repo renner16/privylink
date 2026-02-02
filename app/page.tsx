@@ -357,8 +357,17 @@ export default function Home() {
           </Link>
 
           <div className="flex items-center gap-4">
+            <span className="text-sm text-sol-purple font-medium">
+              Home
+            </span>
+            <Link href="/learn" className="text-sm text-muted hover:text-foreground transition-colors">
+              Learn
+            </Link>
             {status === "connected" ? (
               <>
+                <Link href="/deposits" className="text-sm text-muted hover:text-foreground transition-colors">
+                  My Transfers
+                </Link>
                 <div className="hidden items-center gap-2 sm:flex">
                   <span className="status-online" />
                   <span className="text-xs font-medium text-sol-green">Devnet</span>
@@ -544,6 +553,123 @@ export default function Home() {
                 The recipient proves knowledge of the secret code
                 and receives the SOL directly to their wallet.
               </p>
+            </AnimatedCard>
+          </div>
+        </section>
+
+        {/* ==================== WHY PRIVYLINK (COMPARISON) ==================== */}
+        <section className="container-main py-24 scroll-mt-20">
+          <div className="mb-16 text-center">
+            <h2 className="heading-2 mb-4">Why PrivyLink?</h2>
+            <p className="body-large mx-auto max-w-xl">
+              Traditional transfers expose your financial relationships
+            </p>
+          </div>
+
+          <div className="grid gap-8 md:grid-cols-2">
+            {/* Traditional Transfer - Left */}
+            <AnimatedCard className="rounded-lg border-2 border-red-500/30 bg-red-950/20 p-8" delay={0}>
+              <div className="mb-6 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500/20">
+                  <svg className="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </div>
+                <h3 className="heading-3 text-red-400">Traditional Transfer</h3>
+              </div>
+
+              {/* Diagram */}
+              <div className="mb-6 flex items-center justify-center gap-3">
+                <div className="rounded-lg border border-red-500/30 bg-red-950/30 p-3 text-center">
+                  <p className="text-xs text-red-400 font-medium">Sender</p>
+                  <p className="font-mono text-[10px] text-red-400/60">ABC123...</p>
+                </div>
+                <svg className="h-5 w-5 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+                <div className="rounded-lg border border-red-500/30 bg-red-950/30 p-3 text-center">
+                  <p className="text-xs text-red-400 font-medium">Receiver</p>
+                  <p className="font-mono text-[10px] text-red-400/60">XYZ789...</p>
+                </div>
+              </div>
+
+              {/* List */}
+              <div className="mb-4">
+                <p className="text-xs font-medium text-red-400 mb-3">Visible On-Chain:</p>
+                <ul className="space-y-2">
+                  {[
+                    "Direct sender-receiver connection",
+                    "Transaction amount (5 SOL)",
+                    "Complete wallet histories",
+                    "Permanent public record"
+                  ].map((item, i) => (
+                    <li key={i} className="flex items-center gap-2 text-sm text-red-400/80">
+                      <svg className="h-4 w-4 flex-shrink-0 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <p className="text-sm text-red-400 font-medium">⚠️ Your financial relationships are exposed</p>
+            </AnimatedCard>
+
+            {/* With PrivyLink - Right */}
+            <AnimatedCard className="rounded-lg border-2 border-sol-purple/30 bg-purple-950/20 p-8" delay={0.15}>
+              <div className="mb-6 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sol-purple/20">
+                  <svg className="h-5 w-5 text-sol-purple" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h3 className="heading-3 text-sol-purple">With PrivyLink</h3>
+              </div>
+
+              {/* Diagram */}
+              <div className="mb-6 flex items-center justify-center gap-2">
+                <div className="rounded-lg border border-sol-purple/30 bg-purple-950/30 p-3 text-center">
+                  <p className="text-xs text-sol-purple font-medium">Sender</p>
+                  <p className="font-mono text-[10px] text-sol-purple/60">ABC123...</p>
+                </div>
+                <svg className="h-4 w-4 text-sol-purple flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+                <div className="rounded-lg border-2 border-sol-purple bg-sol-purple/10 p-3 text-center">
+                  <p className="text-xs text-sol-purple font-bold">Vault PDA</p>
+                  <p className="font-mono text-[10px] text-sol-purple/60">vault_abc...</p>
+                </div>
+                <svg className="h-4 w-4 text-sol-purple flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+                <div className="rounded-lg border border-sol-purple/30 bg-purple-950/30 p-3 text-center">
+                  <p className="text-xs text-sol-purple font-medium">Receiver</p>
+                  <p className="font-mono text-[10px] text-sol-purple/60">XYZ789...</p>
+                </div>
+              </div>
+
+              {/* List */}
+              <div className="mb-4">
+                <p className="text-xs font-medium text-sol-purple mb-3">Private On-Chain:</p>
+                <ul className="space-y-2">
+                  {[
+                    "No direct connection",
+                    "Receiver never stored on-chain",
+                    "Only vault deposits/claims visible",
+                    "Relationship privacy preserved"
+                  ].map((item, i) => (
+                    <li key={i} className="flex items-center gap-2 text-sm text-sol-purple/80">
+                      <svg className="h-4 w-4 flex-shrink-0 text-sol-purple" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <p className="text-sm text-sol-purple font-medium">✅ Financial relationships stay private</p>
             </AnimatedCard>
           </div>
         </section>
@@ -767,6 +893,19 @@ export default function Home() {
             </div>
             <p className="text-sol-green mt-6 text-lg font-bold">Total Prize Pool: $42,000</p>
           </div>
+
+          {/* Learn More CTA */}
+          <AnimatedCard className="mt-16" delay={0.4}>
+            <div className="card text-center py-10 bg-gradient-to-br from-sol-purple/10 to-transparent border-sol-purple/30">
+              <h3 className="heading-3 mb-2">New to Crypto Privacy?</h3>
+              <p className="text-muted mb-4">
+                Learn about on-chain surveillance and how to protect yourself.
+              </p>
+              <Link href="/learn" className="btn-primary px-6 py-2.5">
+                Read Privacy Guide
+              </Link>
+            </div>
+          </AnimatedCard>
         </section>
 
         {/* ==================== FOOTER ==================== */}
